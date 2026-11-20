@@ -145,6 +145,15 @@ class LedView @JvmOverloads constructor(
         textSize = 10 * resources.displayMetrics.scaledDensity
         typeface = android.graphics.Typeface.DEFAULT_BOLD
     }
+    private var cpuLabel: String? = null
+    private var cpuPos: String = "below"
+    private var cpuOffsetXPx: Float = 0f
+    private var cpuOffsetYPx: Float = 0f
+    private val cpuPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        textAlign = Paint.Align.CENTER
+        textSize = 12 * resources.displayMetrics.scaledDensity
+        typeface = android.graphics.Typeface.DEFAULT_BOLD
+    }
     private var meterColor = 0
     private var meterStart = 0L
     /** Where on the outline its top-centre point is (0..1), so the gauge fills from 12 o'clock. */
@@ -180,13 +189,32 @@ class LedView @JvmOverloads constructor(
         setBatteryText(percent?.coerceIn(0, 100)?.let { "$it%" })
     }
 
+    fun setCpuLoad(text: String?, pos: String = "below", offsetXDp: Int = 0, offsetYDp: Int = 0, fontSizeSp: Int = 12) {
+        val targetSize = fontSizeSp * resources.displayMetrics.scaledDensity
+        val targetX = offsetXDp * density
+        val targetY = offsetYDp * density
+        if (cpuLabel == text && cpuPos == pos && cpuOffsetXPx == targetX && cpuOffsetYPx == targetY && cpuPaint.textSize == targetSize) return
+        cpuLabel = text
+        cpuPos = pos
+        cpuOffsetXPx = targetX
+        cpuOffsetYPx = targetY
+        cpuPaint.textSize = targetSize
+        invalidate()
+    }
+
     private val lineSpacing get() = max(14 * density, labelPaint.fontSpacing + 2 * density)
 
     /** Leave space for the battery stats without overlapping notification icons. */
     fun indicatorBottom(): Float {
-        val label = batteryLabel ?: return ringBottom()
-        val count = label.count { it == '\n' } + 1
-        return ringBottom() + count * lineSpacing + 2 * density
+        var bottom = ringBottom()
+        batteryLabel?.let { label ->
+            val count = label.count { it == '\n' } + 1
+            bottom += count * lineSpacing + 2 * density
+        }
+        if (cpuLabel != null && cpuPos == "below") {
+            bottom += max(14 * density, cpuPaint.fontSpacing + 2 * density) + max(0f, cpuOffsetYPx)
+        }
+        return bottom
     }
 
     private fun drawLabels(c: Canvas) {
@@ -200,6 +228,45 @@ class LedView @JvmOverloads constructor(
             c.drawText(line, cx, y, labelPaint)
             y += spacing
         }
+    }
+
+    private fun drawCpuLabel(c: Canvas) {
+        val text = cpuLabel ?: return
+        cpuPaint.color = Color.WHITE
+        cpuPaint.alpha = (220 * alphaMul * intro).toInt()
+        val r = ringRadius()
+        val glow = glowRadius()
+        val spacing = max(14 * density, cpuPaint.fontSpacing + 2 * density)
+
+        val tx: Float
+        val ty: Float
+        when (cpuPos) {
+            "right" -> {
+                cpuPaint.textAlign = Paint.Align.LEFT
+                tx = cx + r + glow + 6 * density + cpuOffsetXPx
+                ty = cy + (cpuPaint.textSize / 3f) + cpuOffsetYPx
+            }
+            "left" -> {
+                cpuPaint.textAlign = Paint.Align.RIGHT
+                tx = cx - r - glow - 6 * density + cpuOffsetXPx
+                ty = cy + (cpuPaint.textSize / 3f) + cpuOffsetYPx
+            }
+            "above" -> {
+                cpuPaint.textAlign = Paint.Align.CENTER
+                tx = cx + cpuOffsetXPx
+                ty = cy - r - glow - 6 * density + cpuOffsetYPx
+            }
+            else -> { // "below"
+                cpuPaint.textAlign = Paint.Align.CENTER
+                tx = cx + cpuOffsetXPx
+                val base = if (batteryLabel != null) {
+                    val count = batteryLabel!!.count { it == '\n' } + 1
+                    ringBottom() + count * lineSpacing + 2 * density
+                } else ringBottom()
+                ty = base + spacing - cpuPaint.descent() + cpuOffsetYPx
+            }
+        }
+        c.drawText(text, tx, ty, cpuPaint)
     }
 
     private fun findTopFraction(): Float {
@@ -636,6 +703,7 @@ class LedView @JvmOverloads constructor(
         }
 
         drawLabels(canvas)
+        drawCpuLabel(canvas)
         if (transformed) canvas.restore()
         if (dropT >= 0f && !style.isEdge) {
             if (shiftX != 0f || shiftY != 0f) {

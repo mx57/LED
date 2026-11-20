@@ -375,4 +375,11 @@
     <string name="t_charge_show_voltage">Battery voltage (V)</string>
     <string name="t_charge_show_current">Current amperage (mA)</string>
     <string name="t_charge_show_power">Power wattage (W)</string>
+    <string name="sec_cpu">CPU load</string>
+    <string name="t_cpu_indicator">Show CPU load</string>
+    <string name="t_cpu_show_label">Show \"CPU\" prefix</string>
+    <string name="chips_cpu_pos">Position relative to ring</string>
+    <string name="s_cpu_font_size">CPU text size</string>
+    <string name="s_cpu_offset_x">Offset X</string>
+    <string name="s_cpu_offset_y">Offset Y</string>
 </resources>

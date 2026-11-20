@@ -76,4 +76,10 @@
         <item>10 с</item>
         <item>30 с</item>
     </string-array>
+    <string-array name="cpu_pos_labels">
+        <item>Под кольцом</item>
+        <item>Справа</item>
+        <item>Слева</item>
+        <item>Сверху</item>
+    </string-array>
 </resources>

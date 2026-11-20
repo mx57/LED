@@ -99,6 +99,7 @@ object LedController {
         }
         ContextCompat.registerReceiver(app, screenReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
         syncBatteryWatch()
+        syncCpuWatch()
         watchDisplayState()
         prefs.sp.registerOnSharedPreferenceChangeListener(prefListener)
         // The job service can be missing or over its limit on some builds; updates are optional.
@@ -109,6 +110,7 @@ object LedController {
     private val prefsChanged = Runnable {
         NotifyListenerService.instance?.rebuild()
         syncBatteryWatch()
+        syncCpuWatch()
         refreshAll()
     }
     private val prefListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
@@ -181,6 +183,10 @@ object LedController {
             when (i.action) {
                 Intent.ACTION_SCREEN_OFF -> {
                     OverlayHost.hide()
+                    syncCpuWatch()
+                    if (plugged && prefs.chargeLed && prefs.chargeAod && prefs.chargeTimeoutAodSec > 0) {
+                        chargeAodUntil = SystemClock.uptimeMillis() + prefs.chargeTimeoutAodSec * 1000L
+                    }
                     when {
                         aodVisible -> DebugLog.add("Screen OFF while the light is showing")
                         !prefs.aodOnScreenOff -> DebugLog.add("Screen off (show-on-screen-off is disabled)")
@@ -202,6 +208,7 @@ object LedController {
                         cancelPulse()
                         disarmMotion()
                     }
+                    syncCpuWatch()
                     updateOverlay()
                 }
                 Intent.ACTION_USER_PRESENT -> {
@@ -212,6 +219,7 @@ object LedController {
                         NotificationStore.markAllSeen()
                         notifyListeners()
                     }
+                    syncCpuWatch()
                     updateOverlay()
                 }
                 Intent.ACTION_CONFIGURATION_CHANGED -> updateOverlay()
@@ -449,6 +457,7 @@ object LedController {
             schedulePulse()
         }
         if (reason == EndReason.TIMEOUT && !NotificationStore.isEmpty()) armMotion()
+        syncCpuWatch()
         updateOverlay()
     }
 
@@ -579,9 +588,9 @@ object LedController {
         val canShow = prefs.enabled && !aodVisible && !launching && !appInForeground && isInteractive() && portrait
         val notifRing = prefs.overlayEnabled && !NotificationStore.isEmpty() && (!prefs.overlayLockOnly || isLocked())
         overlayMeter = if (canShow) computeMeter(notifRing) else null
-        val show = canShow && (notifRing || overlayMeter != null || prefs.batteryIndicator)
+        val show = canShow && (notifRing || overlayMeter != null || prefs.batteryIndicator || prefs.cpuIndicator)
         if (!show && isInteractive() && !isLocked() && !NotificationStore.isEmpty()) {
-            DebugLog.add("Overlay off: can=$canShow enabled=${prefs.enabled} aod=$aodVisible fg=$appInForeground portrait=$portrait oE=${prefs.overlayEnabled} lockOnly=${prefs.overlayLockOnly} meter=${overlayMeter != null} batt=${prefs.batteryIndicator}")
+            DebugLog.add("Overlay off: can=$canShow enabled=${prefs.enabled} aod=$aodVisible fg=$appInForeground portrait=$portrait oE=${prefs.overlayEnabled} lockOnly=${prefs.overlayLockOnly} meter=${overlayMeter != null} batt=${prefs.batteryIndicator} cpu=${prefs.cpuIndicator}")
         }
         if (show) {
             OverlayHost.show(app)
@@ -595,6 +604,7 @@ object LedController {
         } else {
             OverlayHost.hide()
         }
+        syncCpuWatch()
     }
 
     // ---- charging ring and transfer ring (both views) ----------------------------------------------
@@ -708,6 +718,45 @@ object LedController {
                 OverlayHost.updateBatteryText()
             }
             main.postDelayed(this, 3000L)
+        }
+    }
+
+    private const val CPU_TICK_MS = 2000L
+    private var cpuWatching = false
+    var cpuUsage: Int = -1
+        private set
+
+    fun cpuStatusText(): String? {
+        if (!prefs.cpuIndicator || cpuUsage < 0) return null
+        return if (prefs.cpuShowLabel) "CPU $cpuUsage%" else "$cpuUsage%"
+    }
+
+    private val cpuTicker = object : Runnable {
+        override fun run() {
+            if (!isInteractive() || !prefs.enabled || !prefs.cpuIndicator || aodVisible) {
+                cpuWatching = false
+                return
+            }
+            CpuStats.updateAsync { usage ->
+                cpuUsage = usage
+                notifyListeners()
+                OverlayHost.updateCpuText()
+            }
+            main.postDelayed(this, CPU_TICK_MS)
+        }
+    }
+
+    fun syncCpuWatch() {
+        val want = prefs.enabled && prefs.cpuIndicator && isInteractive() && !aodVisible
+        if (want && !cpuWatching) {
+            cpuWatching = true
+            main.removeCallbacks(cpuTicker)
+            main.post(cpuTicker)
+        } else if (!want && cpuWatching) {
+            cpuWatching = false
+            main.removeCallbacks(cpuTicker)
+            cpuUsage = -1
+            OverlayHost.updateCpuText()
         }
     }
 

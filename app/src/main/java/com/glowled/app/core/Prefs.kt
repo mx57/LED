@@ -128,6 +128,14 @@ class Prefs(context: Context) {
     val chargeShowCurrent get() = bool("charge_show_current", true)
     val chargeShowPower get() = bool("charge_show_power", true)
 
+    // CPU load indicator (screen on)
+    val cpuIndicator get() = bool("cpu_indicator", false)
+    val cpuPos get() = sp.getString("cpu_pos", "below") ?: "below"
+    val cpuOffsetXDp get() = int("cpu_offset_x", 0).coerceIn(-150, 150)
+    val cpuOffsetYDp get() = int("cpu_offset_y", 0).coerceIn(-150, 150)
+    val cpuFontSizeSp get() = int("cpu_font_size", 12).coerceIn(8, 24)
+    val cpuShowLabel get() = bool("cpu_show_label", true)
+
     val chargeColorLow get() = int("charge_color_low", 0xFFFF1744.toInt())
     val chargeColorMid get() = int("charge_color_mid", 0xFFFFC400.toInt())
     val chargeColorHigh get() = int("charge_color_high", 0xFF00E676.toInt())

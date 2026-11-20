@@ -305,6 +305,17 @@ class MainActivity : AppCompatActivity() {
         cameraLed.visibility = if (show) View.VISIBLE else View.INVISIBLE
         if (!show) return
         cameraLed.configure(prefs, CutoutGeometry.resolve(this, prefs), cameraColors())
+        if (prefs.cpuIndicator) {
+            cameraLed.setCpuLoad(
+                if (prefs.cpuShowLabel) "CPU 24%" else "24%",
+                prefs.cpuPos,
+                prefs.cpuOffsetXDp,
+                prefs.cpuOffsetYDp,
+                prefs.cpuFontSizeSp
+            )
+        } else {
+            cameraLed.setCpuLoad(null)
+        }
         updateTapZoneOutline()
     }
 
@@ -628,6 +639,23 @@ class MainActivity : AppCompatActivity() {
             ColorItem(getString(R.string.c_mid), "charge_color_mid", 0xFFFFC400.toInt()),
             ColorItem(getString(R.string.c_high), "charge_color_high", 0xFF00E676.toInt()),
         ), dependsOn = chargeOn)
+        section(col, R.string.sec_cpu)
+        val cpuOn = { prefs.cpuIndicator }
+        ui.toggles(col, listOf(
+            Toggle(getString(R.string.t_cpu_indicator), "cpu_indicator", false),
+            Toggle(getString(R.string.t_cpu_show_label), "cpu_show_label", true, cpuOn),
+        ))
+        val cpuCard = ui.card(col)
+        ui.chips(cpuCard, getString(R.string.chips_cpu_pos), "cpu_pos",
+            labels(R.array.cpu_pos_labels), listOf("below", "right", "left", "above"), "below", cpuOn)
+        ui.sliders(cpuCard,
+            Range(getString(R.string.s_cpu_font_size), "cpu_font_size", 8, 24, 12, "sp"),
+            Range(getString(R.string.s_cpu_offset_x), "cpu_offset_x", -150, 150, 0, "dp"),
+            dependsOn = cpuOn)
+        ui.sliders(cpuCard,
+            Range(getString(R.string.s_cpu_offset_y), "cpu_offset_y", -150, 150, 0, "dp"),
+            dependsOn = cpuOn)
+        ui.dependOn(cpuCard.parent as View, cpuOn)
         section(col, R.string.sec_transfers)
         ui.toggles(col, listOf(
             Toggle(getString(R.string.t_progress), "progress_led", true),

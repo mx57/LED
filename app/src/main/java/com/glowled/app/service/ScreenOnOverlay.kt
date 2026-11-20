@@ -247,6 +247,13 @@ object ScreenOnOverlay {
         val m = LedController.overlayMeter
         ledView.setMeter(m?.fraction, m?.color ?: 0, m?.icon ?: MeterIcon.NONE, m?.indeterminate ?: false)
         ledView.setBatteryText(LedController.batteryStatusText())
+        ledView.setCpuLoad(
+            LedController.cpuStatusText(),
+            prefs.cpuPos,
+            prefs.cpuOffsetXDp,
+            prefs.cpuOffsetYDp,
+            prefs.cpuFontSizeSp,
+        )
 
         val flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
@@ -267,9 +274,14 @@ object ScreenOnOverlay {
             val expandedW = maxOf(ringW, peekW + (24 * d).toInt(), (220 * d).toInt())
             if (state == State.COLLAPSED) {
                 val tz = tapZoneRect(ctx)
-                p = WindowManager.LayoutParams(tz.width(), tz.height(), type, flags, PixelFormat.TRANSLUCENT)
+                val extraW = if (prefs.cpuIndicator) (160 * d).toInt() else 0
+                val extraH = if (prefs.cpuIndicator) (60 * d).toInt() else 0
+                val w = tz.width() + extraW
+                val h = tz.height() + extraH
+                p = WindowManager.LayoutParams(w, h, type, flags, PixelFormat.TRANSLUCENT)
                 p.gravity = Gravity.TOP or Gravity.START
-                p.x = tz.left; p.y = tz.top
+                p.x = tz.left - extraW / 2
+                p.y = tz.top
             } else {
                 val w = expandedW
                 val x = (g.cx - w / 2f).toInt()
@@ -305,6 +317,13 @@ object ScreenOnOverlay {
         val m = LedController.overlayMeter
         ledView.setMeter(m?.fraction, m?.color ?: 0, m?.icon ?: MeterIcon.NONE, m?.indeterminate ?: false)
         ledView.setBatteryText(LedController.batteryStatusText())
+        ledView.setCpuLoad(
+            LedController.cpuStatusText(),
+            prefs.cpuPos,
+            prefs.cpuOffsetXDp,
+            prefs.cpuOffsetYDp,
+            prefs.cpuFontSizeSp,
+        )
         ledView.dropletRadiusDp = prefs.dropletSizeDp.toFloat()
         info?.monochrome = prefs.aodIcons
         info?.iconDp = prefs.appIconDp
@@ -571,5 +590,16 @@ object ScreenOnOverlay {
 
     fun updateBatteryText() {
         led?.setBatteryText(LedController.batteryStatusText())
+    }
+
+    fun updateCpuText() {
+        val prefs = LedController.prefs
+        led?.setCpuLoad(
+            LedController.cpuStatusText(),
+            prefs.cpuPos,
+            prefs.cpuOffsetXDp,
+            prefs.cpuOffsetYDp,
+            prefs.cpuFontSizeSp,
+        )
     }
 }

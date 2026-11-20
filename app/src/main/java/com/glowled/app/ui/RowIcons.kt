@@ -59,6 +59,10 @@ object RowIcons {
         "progress_initials" to (R.drawable.ic_s_updown to BLUE),
         "progress_app_color" to (R.drawable.ic_s_drop to PINK),
         "progress_color" to (R.drawable.ic_s_palette to PURPLE),
+        "cpu_indicator" to (R.drawable.ic_s_gauge to ORANGE),
+        "cpu_show_label" to (R.drawable.ic_s_badge to BLUE),
+        "cpu_pos" to (R.drawable.ic_s_ring to CYAN),
+        "cpu_font_size" to (R.drawable.ic_s_theme to TEAL),
         // Alerts
         "app_mode" to (R.drawable.ic_s_filter to BLUE),
         "ignore_low" to (R.drawable.ic_s_mute to GREY),

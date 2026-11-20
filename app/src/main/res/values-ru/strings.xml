@@ -374,4 +374,11 @@
     <string name="t_charge_show_voltage">Напряжение батареи (В)</string>
     <string name="t_charge_show_current">Сила тока (мА)</string>
     <string name="t_charge_show_power">Мощность (Вт)</string>
+    <string name="sec_cpu">Нагрузка процессора</string>
+    <string name="t_cpu_indicator">Показывать нагрузку процессора</string>
+    <string name="t_cpu_show_label">Префикс «CPU»</string>
+    <string name="chips_cpu_pos">Положение относительно кольца</string>
+    <string name="s_cpu_font_size">Размер шрифта CPU</string>
+    <string name="s_cpu_offset_x">Смещение по X</string>
+    <string name="s_cpu_offset_y">Смещение по Y</string>
 </resources>
