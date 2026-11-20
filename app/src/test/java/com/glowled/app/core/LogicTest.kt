@@ -167,6 +167,13 @@ class CpuStatsTest {
     }
 
     @Test
+    fun parseTopLineWithAnsiCodes() {
+        val line = "\u001B[7m800%cpu\u001B[0m 100%user 0%nice 50%sys \u001B[1m650%idle\u001B[0m 0%iow"
+        val usage = CpuStats.parseTopLine(line)
+        org.junit.Assert.assertEquals(18, usage)
+    }
+
+    @Test
     fun parseProcStatDelta() {
         val line1 = "cpu  1000 200 300 8000 50 10 20 0 0 0"
         CpuStats.parseProcStatLine(line1)

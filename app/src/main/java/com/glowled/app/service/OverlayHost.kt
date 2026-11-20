@@ -59,7 +59,7 @@ object OverlayHost {
             return
         }
         val manager = ctx.getSystemService(WindowManager::class.java)
-        val v = LedView(ctx)
+        val v = LedView(ctx).apply { intro = 1f }
         val params = buildParams(ctx, v, type)
         try {
             manager.addView(v, params)
@@ -106,13 +106,33 @@ object OverlayHost {
             val e = v.extentPx(g)
             val d = ctx.resources.displayMetrics.density
             val dropRoom = (DROP_DP * d).toInt() * 2
-            val extraW = if (prefs.cpuIndicator) (160 * d).toInt() else 0
-            val extraH = if (prefs.cpuIndicator) (60 * d).toInt() else 0
-            val width = maxOf(e * 2 + extraW, (80 * d).toInt())
-            p = WindowManager.LayoutParams(width, e * 2 + dropRoom + extraH, type, flags, PixelFormat.TRANSLUCENT)
+            val extraLeft = if (prefs.cpuIndicator) {
+                var ex = if (prefs.cpuPos == "left") (90 * d).toInt() else (40 * d).toInt()
+                if (prefs.cpuOffsetXDp < 0) ex += (-prefs.cpuOffsetXDp * d).toInt()
+                ex
+            } else 0
+            val extraRight = if (prefs.cpuIndicator) {
+                var ex = if (prefs.cpuPos == "right") (90 * d).toInt() else (40 * d).toInt()
+                if (prefs.cpuOffsetXDp > 0) ex += (prefs.cpuOffsetXDp * d).toInt()
+                ex
+            } else 0
+            val extraTop = if (prefs.cpuIndicator) {
+                var ey = if (prefs.cpuPos == "above") (45 * d).toInt() else (10 * d).toInt()
+                if (prefs.cpuOffsetYDp < 0) ey += (-prefs.cpuOffsetYDp * d).toInt()
+                ey
+            } else 0
+            val extraBottom = if (prefs.cpuIndicator) {
+                var ey = if (prefs.cpuPos == "below") (45 * d).toInt() else (10 * d).toInt()
+                if (prefs.cpuOffsetYDp > 0) ey += (prefs.cpuOffsetYDp * d).toInt()
+                ey
+            } else 0
+
+            val width = maxOf(e * 2 + extraLeft + extraRight, (80 * d).toInt())
+            val height = e * 2 + dropRoom + extraTop + extraBottom
+            p = WindowManager.LayoutParams(width, height, type, flags, PixelFormat.TRANSLUCENT)
             p.gravity = Gravity.TOP or Gravity.START
-            p.x = (g.cx - p.width / 2f).toInt()
-            p.y = (g.cy - e).toInt()
+            p.x = (g.cx - e - extraLeft).toInt()
+            p.y = (g.cy - e - extraTop).toInt().coerceAtLeast(0)
         }
         p.layoutInDisplayCutoutMode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS

@@ -738,11 +738,12 @@ object LedController {
                 return
             }
             CpuStats.updateAsync { usage ->
+                if (!cpuWatching) return@updateAsync
                 cpuUsage = usage
                 notifyListeners()
                 OverlayHost.updateCpuText()
+                main.postDelayed(this, CPU_TICK_MS)
             }
-            main.postDelayed(this, CPU_TICK_MS)
         }
     }
 

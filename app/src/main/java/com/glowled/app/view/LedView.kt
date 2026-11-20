@@ -199,6 +199,7 @@ class LedView @JvmOverloads constructor(
         cpuOffsetXPx = targetX
         cpuOffsetYPx = targetY
         cpuPaint.textSize = targetSize
+        dirty = true
         invalidate()
     }
 
@@ -232,8 +233,9 @@ class LedView @JvmOverloads constructor(
 
     private fun drawCpuLabel(c: Canvas) {
         val text = cpuLabel ?: return
+        if (intro <= 0f || alphaMul <= 0f) return
         cpuPaint.color = Color.WHITE
-        cpuPaint.alpha = (220 * alphaMul * intro).toInt()
+        cpuPaint.alpha = (220 * alphaMul * intro).toInt().coerceIn(0, 255)
         val r = ringRadius()
         val glow = glowRadius()
         val spacing = max(14 * density, cpuPaint.fontSpacing + 2 * density)
@@ -254,7 +256,7 @@ class LedView @JvmOverloads constructor(
             "above" -> {
                 cpuPaint.textAlign = Paint.Align.CENTER
                 tx = cx + cpuOffsetXPx
-                ty = cy - r - glow - 6 * density + cpuOffsetYPx
+                ty = cy - r - glow - 6 * density - cpuPaint.descent() + cpuOffsetYPx
             }
             else -> { // "below"
                 cpuPaint.textAlign = Paint.Align.CENTER

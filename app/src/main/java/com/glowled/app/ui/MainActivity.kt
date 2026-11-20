@@ -269,6 +269,7 @@ class MainActivity : AppCompatActivity() {
         refreshLive()
         LedController.addListener(storeListener)
         NotifyListenerService.forceReconnect(this)
+        if (prefs.cpuIndicator) com.glowled.app.core.CpuStats.updateAsync { runOnUiThread { refreshLive() } }
         cameraLed.post { playCameraIntro() }
     }
 
@@ -306,8 +307,14 @@ class MainActivity : AppCompatActivity() {
         if (!show) return
         cameraLed.configure(prefs, CutoutGeometry.resolve(this, prefs), cameraColors())
         if (prefs.cpuIndicator) {
+            val usage = if (LedController.cpuUsage >= 0) LedController.cpuUsage else com.glowled.app.core.CpuStats.cachedUsage
+            val text = if (usage >= 0) {
+                if (prefs.cpuShowLabel) "CPU $usage%" else "$usage%"
+            } else {
+                if (prefs.cpuShowLabel) "CPU …" else "…"
+            }
             cameraLed.setCpuLoad(
-                if (prefs.cpuShowLabel) "CPU 24%" else "24%",
+                text,
                 prefs.cpuPos,
                 prefs.cpuOffsetXDp,
                 prefs.cpuOffsetYDp,

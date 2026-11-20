@@ -8,10 +8,11 @@ import java.io.File
 import java.io.FileReader
 import java.io.InputStreamReader
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 /**
  * Reads overall device CPU usage percentage (0..100%).
- * Uses /proc/stat if accessible, falling back to top -n 1 or sysfs frequencies.
+ * Uses /proc/stat if accessible, falling back to top -b -n 1 -m 1 or sysfs frequencies.
  * All sampling runs off the UI thread via [updateAsync].
  */
 object CpuStats {
@@ -30,8 +31,9 @@ object CpuStats {
     fun updateAsync(callback: (Int) -> Unit) {
         executor.execute {
             val usage = sample()
-            cachedUsage = usage
-            mainHandler.post { callback(usage) }
+            if (usage >= 0) cachedUsage = usage
+            val result = if (usage >= 0) usage else (if (cachedUsage >= 0) cachedUsage else 0)
+            mainHandler.post { callback(result) }
         }
     }
 
@@ -46,7 +48,7 @@ object CpuStats {
         val fromFreq = readFreqRatio()
         if (fromFreq in 0..100) return fromFreq
 
-        return if (cachedUsage >= 0) cachedUsage else 0
+        return if (cachedUsage >= 0) cachedUsage else -1
     }
 
     /** Reads /proc/stat if available to the process. */
@@ -90,34 +92,55 @@ object CpuStats {
         }
     }
 
-    /** Runs top -n 1 and parses the global CPU load line. */
-    private fun readTop(): Int = try {
-        val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", "top -n 1"))
-        val line = BufferedReader(InputStreamReader(proc.inputStream)).use { reader ->
-            var matched: String? = null
-            var l: String?
-            while (reader.readLine().also { l = it } != null) {
-                val str = l!!
-                if (str.contains("%cpu") || str.contains("%idle") || (str.contains("User") && str.contains("%"))) {
-                    matched = str
-                    break
+    /**
+     * Runs top in batch mode (-b) with 1 iteration (-n 1) and max 1 process (-m 1).
+     * Does not require an interactive TTY, finishes in ~10-20ms, and outputs clean stats.
+     */
+    private fun readTop(): Int {
+        var proc: Process? = null
+        return try {
+            val cmd = if (File("/system/bin/top").exists()) {
+                arrayOf("/system/bin/top", "-b", "-n", "1", "-m", "1")
+            } else {
+                arrayOf("top", "-b", "-n", "1", "-m", "1")
+            }
+            proc = ProcessBuilder(*cmd).redirectErrorStream(true).start()
+            var matchedLine: String? = null
+            BufferedReader(InputStreamReader(proc.inputStream)).use { reader ->
+                var l: String?
+                var linesRead = 0
+                while (reader.readLine().also { l = it } != null && linesRead < 15) {
+                    linesRead++
+                    val str = l ?: continue
+                    if (str.contains("%cpu", ignoreCase = true) || str.contains("%idle", ignoreCase = true) ||
+                        (str.contains("User", ignoreCase = true) && str.contains("%"))
+                    ) {
+                        matchedLine = str
+                        break
+                    }
                 }
             }
-            matched
+            proc.waitFor(800, TimeUnit.MILLISECONDS)
+            if (matchedLine != null) parseTopLine(matchedLine!!) else -1
+        } catch (e: Throwable) {
+            Log.d(TAG, "readTop failed: ${e.message}")
+            -1
+        } finally {
+            try {
+                proc?.destroy()
+            } catch (_: Throwable) {}
         }
-        proc.destroy()
-        if (line != null) parseTopLine(line) else -1
-    } catch (e: Throwable) {
-        Log.d(TAG, "readTop failed: ${e.message}")
-        -1
     }
+
+    private val ANSI_REGEX = Regex("\u001B\\[[;\\d]*[ -/]*[@-~]")
 
     /**
      * Parses top output line.
      * Format 1 (modern toybox): "800%cpu 125%user 0%nice 68%sys 600%idle ..."
      * Format 2: "User 25%, System 10%, IOW 0%, IRQ 0%"
      */
-    internal fun parseTopLine(line: String): Int {
+    internal fun parseTopLine(rawLine: String): Int {
+        val line = rawLine.replace(ANSI_REGEX, "")
         // Modern toybox: "800%cpu ... 600%idle"
         val match = Regex("""(\d+)%cpu.*?(\d+)%idle""").find(line)
         if (match != null) {
@@ -128,9 +151,9 @@ object CpuStats {
             }
         }
         // Legacy: "User 25%, System 10%..."
-        val user = Regex("""User\s+(\d+)%""").find(line)?.groupValues?.get(1)?.toIntOrNull() ?: 0
-        val sys = Regex("""System\s+(\d+)%""").find(line)?.groupValues?.get(1)?.toIntOrNull() ?: 0
-        val irq = Regex("""IRQ\s+(\d+)%""").find(line)?.groupValues?.get(1)?.toIntOrNull() ?: 0
+        val user = Regex("""User\s+(\d+)%""", RegexOption.IGNORE_CASE).find(line)?.groupValues?.get(1)?.toIntOrNull() ?: 0
+        val sys = Regex("""System\s+(\d+)%""", RegexOption.IGNORE_CASE).find(line)?.groupValues?.get(1)?.toIntOrNull() ?: 0
+        val irq = Regex("""IRQ\s+(\d+)%""", RegexOption.IGNORE_CASE).find(line)?.groupValues?.get(1)?.toIntOrNull() ?: 0
         val sum = user + sys + irq
         if (sum > 0) return sum.coerceIn(0, 100)
         return -1
