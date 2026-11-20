@@ -22,8 +22,8 @@ import java.security.MessageDigest
  */
 object Updater {
 
-    private const val API = "https://api.github.com/repos/ankitchanki/LED/releases/latest"
-    const val RELEASES_PAGE = "https://github.com/ankitchanki/LED/releases"
+    private const val API = "https://api.github.com/repos/mx57/LED/releases/latest"
+    const val RELEASES_PAGE = "https://github.com/mx57/LED/releases"
     private const val APK_NAME = "GlowLED-latest.apk"
     const val ACTION_INSTALL_STATUS = "com.glowled.app.UPDATE_INSTALL_STATUS"
     /** SHA-256 of the Glow LED release signing certificate; updates must carry it. */

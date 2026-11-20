@@ -164,7 +164,7 @@ class NotifyListenerService : NotificationListenerService() {
 
     companion object {
         const val TEST_TAG = "glowled_test"
-        private val READ_WORDS = Regex("\\bread\\b|\\blida\\b|\\blido\\b")
+        internal val READ_WORDS = Regex("\\bread\\b|\\blida\\b|\\blido\\b|прочит", RegexOption.IGNORE_CASE)
 
         @Volatile
         var instance: NotifyListenerService? = null

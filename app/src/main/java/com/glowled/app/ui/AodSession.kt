@@ -207,7 +207,7 @@ class AodSession(
         }
         val g = geometry()
         // Window coordinates: below the ring, below the status-bar/cutout band, never at the very edge.
-        val safeTop = max(led.indicatorBottom() + 16 * density - loc[1], statusBandPx() + 8 * density)
+        val safeTop = max(led.indicatorBottom() + 16 * density, statusBandPx() + 8 * density)
         infoX = g.cx - loc[0] - info.measuredWidth / 2f + led.shiftX
         infoY = max(safeTop, 8 * density) + led.shiftY
         place(info, infoX, infoY)

@@ -142,6 +142,44 @@ class BatteryStatsTest {
         val none = info.formatString(showPercent = false, showVoltage = false, showCurrent = false, showPower = false)
         org.junit.Assert.assertNull(none)
     }
+
+    @Test
+    fun handlesZeroAndNegativeEdgeCases() {
+        val info = BatteryInfo(
+            level = -1, // invalid level
+            voltageMv = 0, // no voltage
+            currentMa = -500, // discharging
+            powerWatts = 0.02f, // too low power (< 0.05W)
+            isCharging = false,
+        )
+        // Level -1 and voltage 0 should be omitted from row1.
+        // Current -500 should show as 500 mA, power 0.02 should be omitted.
+        val res = info.formatString(showPercent = true, showVoltage = true, showCurrent = true, showPower = true)
+        org.junit.Assert.assertEquals("500 mA", res)
+    }
+}
+
+class NotifyListenerReadWordsTest {
+    @Test
+    fun matchesReadActionsInMultipleLanguages() {
+        val regex = com.glowled.app.service.NotifyListenerService.READ_WORDS
+        assertTrue(regex.containsMatchIn("read"))
+        assertTrue(regex.containsMatchIn("Mark as read"))
+        assertTrue(regex.containsMatchIn("lida"))
+        assertTrue(regex.containsMatchIn("marcar como lido"))
+        assertTrue(regex.containsMatchIn("Прочитано"))
+        assertTrue(regex.containsMatchIn("прочитать"))
+        assertTrue(regex.containsMatchIn("Отметить как прочитанное"))
+    }
+
+    @Test
+    fun doesNotMatchNonReadActions() {
+        val regex = com.glowled.app.service.NotifyListenerService.READ_WORDS
+        assertFalse(regex.containsMatchIn("reply"))
+        assertFalse(regex.containsMatchIn("ответить"))
+        assertFalse(regex.containsMatchIn("удалить"))
+        assertFalse(regex.containsMatchIn("archive"))
+    }
 }
 
 class CpuStatsTest {

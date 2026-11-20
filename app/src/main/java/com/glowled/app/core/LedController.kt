@@ -228,11 +228,13 @@ object LedController {
                     chargeFlashUntil = now + CHARGE_FLASH_MS
                     chargeScreenOnUntil = if (prefs.chargeTimeoutOnSec > 0) now + prefs.chargeTimeoutOnSec * 1000L else Long.MAX_VALUE
                     chargeAodUntil = if (prefs.chargeTimeoutAodSec > 0) now + prefs.chargeTimeoutAodSec * 1000L else Long.MAX_VALUE
-                    if (prefs.chargeTimeoutOnSec > 0) {
-                        main.postDelayed({ updateOverlay(); notifyListeners() }, prefs.chargeTimeoutOnSec * 1000L + 50)
-                    }
-                    if (prefs.chargeTimeoutAodSec > 0) {
-                        main.postDelayed({ updateOverlay(); notifyListeners() }, prefs.chargeTimeoutAodSec * 1000L + 50)
+                    main.removeCallbacks(chargeTimeoutTask)
+                    val next = listOfNotNull(
+                        chargeScreenOnUntil.takeIf { it > now && it < Long.MAX_VALUE },
+                        chargeAodUntil.takeIf { it > now && it < Long.MAX_VALUE },
+                    ).minOrNull()
+                    if (next != null) {
+                        main.postDelayed(chargeTimeoutTask, (next - now) + 50)
                     }
                     syncBatteryWatch(pluggedHint = true)
                     updateOverlay()
@@ -241,6 +243,7 @@ object LedController {
                 }
                 Intent.ACTION_POWER_DISCONNECTED -> {
                     DebugLog.add("Charger disconnected, ${state()}")
+                    main.removeCallbacks(chargeTimeoutTask)
                     chargeFlashUntil = 0L
                     chargeScreenOnUntil = 0L
                     chargeAodUntil = 0L
@@ -624,6 +627,21 @@ object LedController {
     private var chargeAodUntil = 0L
     private var chargeScreenOnUntil = 0L
     private var batteryWatching = false
+
+    private val chargeTimeoutTask = object : Runnable {
+        override fun run() {
+            updateOverlay()
+            notifyListeners()
+            val now = SystemClock.uptimeMillis()
+            val next = listOfNotNull(
+                chargeScreenOnUntil.takeIf { it > now && it < Long.MAX_VALUE },
+                chargeAodUntil.takeIf { it > now && it < Long.MAX_VALUE },
+            ).minOrNull()
+            if (next != null) {
+                main.postDelayed(this, (next - now) + 50)
+            }
+        }
+    }
 
     /**
      * Whether there is anything for the screen-off light to show. Only things worth waking the
