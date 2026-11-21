@@ -381,4 +381,15 @@
     <string name="s_cpu_font_size">Размер шрифта CPU</string>
     <string name="s_cpu_offset_x">Смещение по X</string>
     <string name="s_cpu_offset_y">Смещение по Y</string>
+    <string name="g_diag">Диагностика</string>
+    <string name="g_diag_sub">Статус разрешений и системы</string>
+    <string name="diag_export">Экспорт отчёта</string>
+    <string name="diag_telemetry">AOD за 24ч: %1$d сессий · %2$dс анимации · %3$dс статики</string>
+    <string name="restore_confirm_msg">Найдено настроек: %1$d (из них %2$d правил приложений) из версии %3$s.\n\nПрименить и перезаписать текущие настройки?</string>
+    <string name="sec_snooze">Временная пауза</string>
+    <string name="snooze_title">Приостановить индикатор</string>
+    <string name="snooze_off">Выкл</string>
+    <string name="tile_snooze_sub">Пауза · %d мин</string>
+    <string name="block_snoozed">Приостановлено пользователем</string>
 </resources>
+

@@ -136,6 +136,7 @@ class NotifyListenerService : NotificationListenerService() {
             replyAction = replyActionOf(n),
             readAction = readActionOf(n),
             clearable = sbn.isClearable,
+            isPriority = prefs.appPriority(pkg),
         )
     }
 

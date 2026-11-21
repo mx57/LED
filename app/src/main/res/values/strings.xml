@@ -382,4 +382,15 @@
     <string name="s_cpu_font_size">CPU text size</string>
     <string name="s_cpu_offset_x">Offset X</string>
     <string name="s_cpu_offset_y">Offset Y</string>
+    <string name="g_diag">Diagnostics</string>
+    <string name="g_diag_sub">System status &amp; health</string>
+    <string name="diag_export">Export report</string>
+    <string name="diag_telemetry">AOD (24h): %1$d wakeups · %2$ds animated · %3$ds static</string>
+    <string name="restore_confirm_msg">Found %1$d settings (including %2$d app rules) from version %3$s.\n\nOverwrite current settings?</string>
+    <string name="sec_snooze">Temporary pause</string>
+    <string name="snooze_title">Pause LED (Snooze)</string>
+    <string name="snooze_off">Off</string>
+    <string name="tile_snooze_sub">Paused · %d min</string>
+    <string name="block_snoozed">Paused by user</string>
 </resources>
+

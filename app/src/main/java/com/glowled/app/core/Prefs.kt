@@ -186,8 +186,28 @@ class Prefs(context: Context) {
     // Filters
     val appMode get() = str("app_mode", "all")
     val ignoreLowImportance get() = bool("ignore_low", true)
+    val ignoreSilentNotifications get() = ignoreLowImportance
     val respectDnd get() = bool("respect_dnd", true)
     val clearOnUnlock get() = bool("clear_on_unlock", false)
+
+    // Snooze / temporary pause
+    var pausedUntilEpochMs: Long
+        get() = sp.getLong("paused_until", 0L)
+        set(v) = sp.edit().putLong("paused_until", v).apply()
+
+    val isPaused: Boolean
+        get() {
+            val until = pausedUntilEpochMs
+            return until > 0 && System.currentTimeMillis() < until
+        }
+
+    fun snooze(minutes: Int) {
+        pausedUntilEpochMs = System.currentTimeMillis() + minutes * 60_000L
+    }
+
+    fun clearSnooze() {
+        pausedUntilEpochMs = 0L
+    }
 
     // Power
     val minBattery get() = int("min_battery", 10)
@@ -220,6 +240,13 @@ class Prefs(context: Context) {
         sp.getBoolean("app_en_$pkg", appMode == "all")
 
     fun setAppEnabled(pkg: String, on: Boolean) = sp.edit().putBoolean("app_en_$pkg", on).apply()
+
+    fun appPriority(pkg: String): Boolean = sp.getBoolean("app_prio_$pkg", false)
+
+    fun setAppPriority(pkg: String, priority: Boolean) {
+        if (!priority) sp.edit().remove("app_prio_$pkg").apply()
+        else sp.edit().putBoolean("app_prio_$pkg", true).apply()
+    }
 
     /** 0 means "automatic". */
     fun appColor(pkg: String): Int = sp.getInt("app_color_$pkg", 0)

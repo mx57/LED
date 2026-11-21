@@ -106,8 +106,16 @@ class AodSession(
     /** When the panel last came on, to tell the system switching it off from the user doing it. */
     private var panelOnAt = 0L
     private var rewoken = false
+    private var settledAt = 0L
+    private var isSettled = false
     /** Eco: once the entrance and droplet have played, hold a still ring (no more redraws). */
-    private val settle = Runnable { led.settle() }
+    private val settle = Runnable {
+        led.settle()
+        if (!isSettled) {
+            isSettled = true
+            settledAt = android.os.SystemClock.uptimeMillis()
+        }
+    }
     /** Re-dims the ring as the notifications get older. */
     private val ageTick = object : Runnable {
         override fun run() {
@@ -117,8 +125,9 @@ class AodSession(
     }
     private val burnIn = object : Runnable {
         override fun run() {
-            led.shiftX = Random.nextInt(-3, 4).toFloat()
-            led.shiftY = Random.nextInt(-3, 4).toFloat()
+            val (dx, dy) = com.glowled.app.core.BurnInShiftCalculator.calculateShift(android.os.SystemClock.uptimeMillis())
+            led.shiftX = dx
+            led.shiftY = dy
             led.invalidate()
             root.requestLayout() // re-place the strip with the new shift
             handler.postDelayed(this, BURN_IN_MS)
@@ -460,6 +469,7 @@ class AodSession(
     }
 
     fun restartAnimation() {
+        isSettled = false
         led.configure(prefs, geometry(), currentColors())
         led.dropletRadiusDp = prefs.dropletSizeDp.toFloat() // undoes an eco still ring
         updateMeters()
@@ -688,6 +698,17 @@ class AodSession(
         }
         sensorManager?.unregisterListener(proximityListener)
         sensorManager = null
+        if (!preview) {
+            val sessionTotal = android.os.SystemClock.uptimeMillis() - startedAt
+            val (animMs, staticMs) = if (isSettled && settledAt >= startedAt) {
+                val a = settledAt - startedAt
+                val s = sessionTotal - a
+                a.coerceAtLeast(0L) to s.coerceAtLeast(0L)
+            } else {
+                sessionTotal.coerceAtLeast(0L) to 0L
+            }
+            com.glowled.app.core.BatteryStats.recordAodSession(context, animMs, staticMs)
+        }
     }
 
     companion object {

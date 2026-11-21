@@ -66,9 +66,11 @@ object RowIcons {
         // Alerts
         "app_mode" to (R.drawable.ic_s_filter to BLUE),
         "ignore_low" to (R.drawable.ic_s_mute to GREY),
+        "ignore_silent" to (R.drawable.ic_s_mute to GREY),
         "respect_dnd" to (R.drawable.ic_s_moon to INDIGO),
         "clear_on_unlock" to (R.drawable.ic_s_unlock to GREEN),
         // Battery
+        "snooze" to (R.drawable.ic_s_moon to PURPLE),
         "eco_anim" to (R.drawable.ic_s_leaf to GREEN),
         "age_fade" to (R.drawable.ic_s_clock to ORANGE),
         "motion_glance" to (R.drawable.ic_s_motion to PURPLE),

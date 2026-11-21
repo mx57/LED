@@ -47,7 +47,10 @@ object CutoutGeometry {
         if (d.rotation != Surface.ROTATION_0) return null
         val cutout = d.cutout ?: return null
         val screenW = naturalSize(context).x.toFloat()
+        return fromDisplayCutout(cutout, screenW)
+    }
 
+    fun fromDisplayCutout(cutout: android.view.DisplayCutout, screenW: Float): Geometry? {
         val bounds = RectF()
         var exact = false
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {

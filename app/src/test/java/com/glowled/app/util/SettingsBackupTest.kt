@@ -168,4 +168,50 @@ class SettingsBackupTest {
         // Broken JSON
         assertEquals(-1, SettingsBackup.restoreFromJson(sp, "{ broken json"))
     }
+
+    @Test
+    fun inspectsBackupSummaryAccurately() {
+        val jsonText = """
+            {
+                "_app": "glowled",
+                "_version": 1,
+                "appVersion": "2.10.0",
+                "exportedAt": 1700000000000,
+                "prefs": {
+                    "enabled": { "t": "b", "v": true },
+                    "speed": { "t": "i", "v": 5 },
+                    "app_en_com.whatsapp": { "t": "b", "v": true },
+                    "app_color_com.whatsapp": { "t": "i", "v": 12345 },
+                    "aod_window_blocked": { "t": "b", "v": true },
+                    "malformed": "bad"
+                }
+            }
+        """.trimIndent()
+
+        val summary = SettingsBackup.inspect(jsonText)
+        assertTrue(summary.isValid)
+        assertEquals(1, summary.schemaVersion)
+        assertEquals("2.10.0", summary.appVersion)
+        assertEquals(1700000000000L, summary.exportedAt)
+        assertEquals(4, summary.validSettingsCount) // enabled, speed, app_en, app_color
+        assertEquals(2, summary.appRulesCount) // app_en, app_color
+        assertEquals(2, summary.skippedKeysCount) // aod_window_blocked, malformed
+    }
+
+    @Test
+    fun migratesV1ToV2Successfully() {
+        val v1Json = JSONObject("""
+            {
+                "_app": "glowled",
+                "_version": 1,
+                "prefs": {
+                    "enabled": { "t": "b", "v": true }
+                }
+            }
+        """.trimIndent())
+
+        val migrated = SettingsBackup.migrate(v1Json, 1)
+        assertEquals(2, migrated.getInt("schemaVersion"))
+    }
 }
+

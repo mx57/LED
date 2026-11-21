@@ -57,12 +57,81 @@ object SettingsBackup {
         -1
     }
 
+    data class BackupSummary(
+        val schemaVersion: Int,
+        val appVersion: String,
+        val exportedAt: Long,
+        val validSettingsCount: Int,
+        val appRulesCount: Int,
+        val skippedKeysCount: Int,
+        val isValid: Boolean,
+    )
+
+    fun inspect(text: String): BackupSummary {
+        if (text.isBlank()) return BackupSummary(0, "", 0L, 0, 0, 0, false)
+        return try {
+            val json = JSONObject(text)
+            inspect(json)
+        } catch (_: Exception) {
+            BackupSummary(0, "", 0L, 0, 0, 0, false)
+        }
+    }
+
+    fun inspect(json: JSONObject): BackupSummary {
+        if (json.optString("_app") != "glowled") {
+            return BackupSummary(0, "", 0L, 0, 0, 0, false)
+        }
+        val schemaVer = if (json.has("schemaVersion")) json.getInt("schemaVersion") else json.optInt("_version", 1)
+        val appVer = json.optString("appVersion", "unknown")
+        val exportedAt = json.optLong("exportedAt", 0L)
+        val prefsObj = json.optJSONObject("prefs") ?: JSONObject()
+
+        var validSettings = 0
+        var appRules = 0
+        var skipped = 0
+
+        prefsObj.keys().forEach { k ->
+            if (k in skip) {
+                skipped++
+            } else {
+                val o = prefsObj.optJSONObject(k)
+                if (o != null && o.has("v")) {
+                    validSettings++
+                    if (k.startsWith("app_") || k.startsWith("color_")) {
+                        appRules++
+                    }
+                } else {
+                    skipped++
+                }
+            }
+        }
+
+        return BackupSummary(
+            schemaVersion = schemaVer,
+            appVersion = appVer,
+            exportedAt = exportedAt,
+            validSettingsCount = validSettings,
+            appRulesCount = appRules,
+            skippedKeysCount = skipped,
+            isValid = true,
+        )
+    }
+
+    fun migrate(json: JSONObject, fromVersion: Int): JSONObject {
+        if (fromVersion < 2) {
+            json.put("schemaVersion", 2)
+        }
+        return json
+    }
+
     fun restoreFromJson(sp: SharedPreferences, text: String): Int = try {
         if (text.isBlank()) -1
         else {
             val json = JSONObject(text)
             if (json.optString("_app") == "glowled") {
-                val prefsObj = json.optJSONObject("prefs") ?: JSONObject()
+                val version = if (json.has("schemaVersion")) json.getInt("schemaVersion") else json.optInt("_version", 1)
+                val migrated = if (version < 2) migrate(json, version) else json
+                val prefsObj = migrated.optJSONObject("prefs") ?: JSONObject()
                 restore(sp, prefsObj)
             } else -1
         }
@@ -96,3 +165,4 @@ object SettingsBackup {
         return n
     }
 }
+

@@ -124,4 +124,25 @@ class NotificationStoreTest {
         assertTrue(latch.await(5, TimeUnit.SECONDS))
         assertEquals(0, errors.get())
     }
+
+    @Test
+    fun priorityEntriesTakePrecedenceOverNewerRegularEntries() {
+        // Regular notification arrived at t=200 with color 0x00FF00
+        NotificationStore.put(NotificationStore.Entry("reg", "pkg_reg", 0x00FF00, 200, isPriority = false))
+        // Priority notification arrived earlier at t=100 with color 0xFF0000
+        NotificationStore.put(NotificationStore.Entry("prio", "pkg_prio", 0xFF0000, 100, isPriority = true))
+
+        // In colors: priority color (0xFF0000) must appear before regular (0x00FF00)
+        val colors = NotificationStore.colors()
+        assertEquals(2, colors.size)
+        assertEquals(0xFF0000, colors[0])
+        assertEquals(0x00FF00, colors[1])
+
+        // In apps: priority app must appear first
+        val apps = NotificationStore.apps()
+        assertEquals(2, apps.size)
+        assertEquals("pkg_prio", apps[0].pkg)
+        assertEquals("pkg_reg", apps[1].pkg)
+    }
 }
+

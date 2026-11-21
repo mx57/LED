@@ -62,4 +62,20 @@ class PowerGuardTest {
         assertTrue(PowerGuard.inWindow(1200, 0, 1439))
         assertFalse(PowerGuard.inWindow(1439, 0, 1439))
     }
+
+    @Test
+    fun snoozeActiveAndExpired() {
+        val now = 1_000_000L
+        // Zero or negative -> not snoozed
+        assertFalse(PowerGuard.isSnoozed(0L, now))
+        assertFalse(PowerGuard.isSnoozed(-1L, now))
+
+        // Paused until future -> snoozed
+        assertTrue(PowerGuard.isSnoozed(now + 60_000L, now))
+
+        // Paused until past or exact now -> expired
+        assertFalse(PowerGuard.isSnoozed(now, now))
+        assertFalse(PowerGuard.isSnoozed(now - 1000L, now))
+    }
 }
+
