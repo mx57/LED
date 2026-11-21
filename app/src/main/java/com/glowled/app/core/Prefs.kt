@@ -10,6 +10,39 @@ class Prefs(context: Context) {
         it.getSharedPreferences("${it.packageName}_preferences", Context.MODE_PRIVATE)
     }
 
+    /** Device-specific / runtime state excluded from Android Auto Backup. */
+    val deviceSp: SharedPreferences = context.applicationContext.let {
+        it.getSharedPreferences("device_state", Context.MODE_PRIVATE)
+    }
+
+    init {
+        migrateDeviceState()
+    }
+
+    private fun migrateDeviceState() {
+        val keys = listOf(
+            "aod_window_blocked", K_TRANSFER_APPS,
+            "update_latest", "update_notes", "update_checked", "update_notified",
+        )
+        val toMigrate = keys.filter { sp.contains(it) }
+        if (toMigrate.isNotEmpty()) {
+            val oldEdit = sp.edit()
+            val newEdit = deviceSp.edit()
+            for (k in toMigrate) {
+                when (val v = sp.all[k]) {
+                    is Boolean -> newEdit.putBoolean(k, v)
+                    is Int -> newEdit.putInt(k, v)
+                    is Long -> newEdit.putLong(k, v)
+                    is Float -> newEdit.putFloat(k, v)
+                    is String -> newEdit.putString(k, v)
+                }
+                oldEdit.remove(k)
+            }
+            newEdit.apply()
+            oldEdit.apply()
+        }
+    }
+
     private fun int(key: String, def: Int) = sp.getInt(key, def)
     private fun bool(key: String, def: Boolean) = sp.getBoolean(key, def)
     private fun str(key: String, def: String) = sp.getString(key, def) ?: def
@@ -212,12 +245,12 @@ class Prefs(context: Context) {
 
     /** Apps that have shown a progress bar, so the per-app arrow list can offer them (comma separated). */
     val transferApps: Set<String>
-        get() = str(K_TRANSFER_APPS, "").split(',').filter { it.isNotBlank() }.toSet()
+        get() = (deviceSp.getString(K_TRANSFER_APPS, "") ?: "").split(',').filter { it.isNotBlank() }.toSet()
 
     fun noteTransferApp(pkg: String) {
         val now = transferApps
         if (pkg in now) return
-        sp.edit().putString(K_TRANSFER_APPS, (now.toList() + pkg).takeLast(MAX_TRANSFER_APPS).joinToString(",")).apply()
+        deviceSp.edit().putString(K_TRANSFER_APPS, (now.toList() + pkg).takeLast(MAX_TRANSFER_APPS).joinToString(",")).apply()
     }
 
     companion object {

@@ -81,11 +81,10 @@ object LedController {
     /** Set when an AOD session ended (timeout / user) so we don't relight for the same notifications. */
     private var suppressed = false
     private var ourWakeUntil = 0L
-    private var initialized = false
+    private val initialized = java.util.concurrent.atomic.AtomicBoolean(false)
 
     fun init(context: Context) {
-        if (initialized) return
-        initialized = true
+        if (!initialized.compareAndSet(false, true)) return
         app = context.applicationContext
         prefs = Prefs(app)
         colors = ColorResolver(app, prefs)
@@ -122,7 +121,13 @@ object LedController {
 
     fun addListener(l: () -> Unit) = listeners.add(l)
     fun removeListener(l: () -> Unit) = listeners.remove(l)
-    private fun notifyListeners() = listeners.forEach { it() }
+    private fun notifyListeners() {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            listeners.forEach { it() }
+        } else {
+            main.post { listeners.forEach { it() } }
+        }
+    }
 
     fun refreshAll() {
         notifyListeners()
@@ -303,10 +308,10 @@ object LedController {
             // HyperOS/MIUI draw their lock screen over the lock-screen window for a moment when the
             // display wakes (a bright flash before the black screen), so use the overlay there.
             else -> !canLaunchFromBackground() || OemHelper.isXiaomi || OemHelper.miuiLockScreenAllowed(app) == false ||
-                prefs.sp.getBoolean(PREF_WINDOW_BLOCKED, false)
+                prefs.deviceSp.getBoolean(PREF_WINDOW_BLOCKED, false)
         }
         DebugLog.add("Method: ${if (useOverlay) "overlay" else "lock-screen window"} (setting: ${prefs.aodMethod}" +
-            ", window blocked before: ${prefs.sp.getBoolean(PREF_WINDOW_BLOCKED, false)}), ${state()}")
+            ", window blocked before: ${prefs.deviceSp.getBoolean(PREF_WINDOW_BLOCKED, false)}), ${state()}")
         if (useOverlay) {
             startOverlay(duration, preview)
             return
@@ -320,7 +325,7 @@ object LedController {
             main.postDelayed({
                 if (!aodVisible && !AodOverlay.isShowing && hasAodContent()) {
                     DebugLog.add("Lock-screen window was blocked by the system - switching to overlay")
-                    prefs.sp.edit().putBoolean(PREF_WINDOW_BLOCKED, true).apply()
+                    prefs.deviceSp.edit().putBoolean(PREF_WINDOW_BLOCKED, true).apply()
                     startOverlay(duration, false)
                 }
             }, 1300)
@@ -366,7 +371,7 @@ object LedController {
         val overlay = LedAccessibilityService.instance != null && prefs.aodMethod != "activity"
         return if (overlay) {
             DebugLog.add("Window started $px px below the camera - switching to the overlay now")
-            prefs.sp.edit().putBoolean(PREF_WINDOW_BLOCKED, true).apply()
+            prefs.deviceSp.edit().putBoolean(PREF_WINDOW_BLOCKED, true).apply()
             // Let the activity finish first, then show the overlay for the rest of the session.
             main.postDelayed({ startOverlay(durationSec, false) }, 120)
             true
@@ -585,7 +590,7 @@ object LedController {
     // ---- screen-on overlay ------------------------------------------------------------------------
 
     fun updateOverlay() {
-        if (!initialized) return
+        if (!initialized.get()) return
         val launching = SystemClock.uptimeMillis() < ourWakeUntil
         val portrait = prefs.style.isEdge || CutoutGeometry.isPortrait(app)
         val canShow = prefs.enabled && !aodVisible && !launching && !appInForeground && isInteractive() && portrait

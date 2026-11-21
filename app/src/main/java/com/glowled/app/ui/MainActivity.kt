@@ -124,7 +124,7 @@ class MainActivity : AppCompatActivity() {
     private val prefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         if (key == "style") styleAdapter.notifyItemRangeChanged(0, styleAdapter.itemCount)
         // A new method choice gets a fresh chance to use the flicker-free lock-screen window.
-        if (key == "aod_method") prefs.sp.edit().remove(LedController.PREF_WINDOW_BLOCKED).apply()
+        if (key == "aod_method") prefs.deviceSp.edit().remove(LedController.PREF_WINDOW_BLOCKED).apply()
         configureCameraLed()
         if (key == "droplet" && prefs.droplet) {
             // Show what the setting does: on the real camera, and in the one-handed preview.
@@ -739,7 +739,7 @@ class MainActivity : AppCompatActivity() {
     private fun updateText(): String {
         val cur = BuildConfig.VERSION_NAME.substringBefore('-')
         return Updater.pendingVersion()?.let { getString(R.string.upd_sub_available, it) }
-            ?: if (prefs.sp.contains(Updater.K_CHECKED)) getString(R.string.upd_sub_latest, cur)
+            ?: if (prefs.deviceSp.contains(Updater.K_CHECKED)) getString(R.string.upd_sub_latest, cur)
             else getString(R.string.upd_sub_unknown, cur)
     }
 

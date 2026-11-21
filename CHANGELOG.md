@@ -17,6 +17,18 @@
 - **Interactive timeout reset:** reading or scrolling through notifications automatically extends the peek duration.
 - **New settings toggle:** easily enable or disable expandable messages in Screen Off → Messages.
 
+## Independent charging ring settings & battery metrics
+- **Separate timers & controls:** independently configure charging ring display on active screen and always-on display (AOD).
+- **Live battery metrics:** optional real-time display of battery percentage, voltage (V), current (mA), and charging power (W) with individual toggles.
+
+## Live CPU load indicator
+- **Continuous CPU monitoring:** optional real-time CPU usage near or below the camera cutout with customizable position (above, below, left, right), offset, and font size.
+
+## Maintenance & stability
+- **Fork updater support:** in-app updater now targets `mx57/LED` repository releases with guaranteed connection closing and package signing certificate verification.
+- **Device state isolation:** device-specific and cached states separated into `device_state.xml` and excluded from Android Auto Backup.
+- **Thread-safe controller initialization:** atomic guard and main-thread listener notifications prevent race conditions on cold start.
+
 ---
 
 # Glow LED v2.10.1

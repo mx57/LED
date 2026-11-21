@@ -28,6 +28,11 @@ android {
         targetSdk = 35
         versionCode = 35
         versionName = "2.11.0"
+
+        val updateRepo = (project.findProperty("UPDATE_REPO") as? String) ?: "mx57/LED"
+        val expectedSha = (project.findProperty("EXPECTED_SIGNING_SHA256") as? String) ?: ""
+        buildConfigField("String", "UPDATE_REPO", "\"$updateRepo\"")
+        buildConfigField("String", "EXPECTED_SIGNING_SHA256", "\"$expectedSha\"")
     }
 
     signingConfigs {
@@ -68,6 +73,11 @@ android {
     }
     testOptions {
         unitTests.isReturnDefaultValues = true
+    }
+    lint {
+        disable += "MissingTranslation"
+        abortOnError = true
+        checkReleaseBuilds = false
     }
     dependenciesInfo {
         includeInApk = false
