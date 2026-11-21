@@ -70,12 +70,11 @@ object CutoutGeometry {
         var h = bounds.height()
         var cx = bounds.centerX()
         var cy = bounds.centerY()
-        val shape: CutoutShape
-        when {
-            w > screenW * 0.2f -> shape = CutoutShape.NOTCH
-            w / h > 1.5f -> shape = CutoutShape.PILL
-            else -> {
-                shape = CutoutShape.CIRCLE
+        val shape = classifyShape(w, h, screenW)
+        when (shape) {
+            CutoutShape.NOTCH -> {}
+            CutoutShape.PILL -> {}
+            CutoutShape.DOT, CutoutShape.CIRCLE -> {
                 if (!exact && bounds.top <= 0.5f && h > w * 1.15f) {
                     // Bounding rects of punch holes usually extend to the top edge.
                     h = w
@@ -120,5 +119,12 @@ object CutoutGeometry {
             if (rc != null && rc.radius > 0) return rc.radius.toFloat()
         }
         return prefs.edgeRadiusDp * context.resources.displayMetrics.density
+    }
+
+    /** Pure heuristic classifying cutout shape from dimensions and screen width. */
+    fun classifyShape(w: Float, h: Float, screenW: Float): CutoutShape = when {
+        w > screenW * 0.2f -> CutoutShape.NOTCH
+        h > 0f && w / h > 1.5f -> CutoutShape.PILL
+        else -> CutoutShape.CIRCLE
     }
 }
