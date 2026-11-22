@@ -62,4 +62,18 @@
         <item>Açık</item>
         <item>Sistem</item>
     </string-array>
+    <string-array name="charge_timeout_aod_labels">
+        <item>Her zaman</item>
+        <item>5 sn</item>
+        <item>15 sn</item>
+        <item>30 sn</item>
+        <item>1 dk</item>
+        <item>5 dk</item>
+    </string-array>
+    <string-array name="charge_timeout_on_labels">
+        <item>Her zaman</item>
+        <item>5 sn</item>
+        <item>10 sn</item>
+        <item>30 sn</item>
+    </string-array>
 </resources>

@@ -62,4 +62,18 @@
         <item>ライト</item>
         <item>システム</item>
     </string-array>
+    <string-array name="charge_timeout_aod_labels">
+        <item>常時</item>
+        <item>5秒</item>
+        <item>15秒</item>
+        <item>30秒</item>
+        <item>1分</item>
+        <item>5分</item>
+    </string-array>
+    <string-array name="charge_timeout_on_labels">
+        <item>常時</item>
+        <item>5秒</item>
+        <item>10秒</item>
+        <item>30秒</item>
+    </string-array>
 </resources>

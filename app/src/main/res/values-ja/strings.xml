@@ -342,4 +342,36 @@
     <string name="sc_download_sub">ダウンロード中はリングが満ちていき、↓ 矢印が付きます。</string>
     <string name="sc_upload">アップロード</string>
     <string name="sc_upload_sub">アップロード中はリングが満ちていき、↑ 矢印が付きます。</string>
+    <string name="t_peek_expandable">展開可能なメッセージ</string>
+    <string name="peek_expand">展開 (%d)</string>
+    <string name="peek_expand_single">展開</string>
+    <string name="peek_collapse">折りたたむ</string>
+    <string name="peek_mark_all_read">すべて既読にする</string>
+    <string name="peek_messages_count">%1$s · %2$d件のメッセージ</string>
+    <string name="reply_recent_context">最近のメッセージ</string>
+    <string name="quick_reply_ok">OK</string>
+    <string name="quick_reply_thanks">ありがとう!</string>
+    <string name="quick_reply_on_my_way">今向かっています</string>
+    <string name="quick_reply_later">後で</string>
+    <string name="t_overlay_tap_messages">リングをタップしてメッセージを読む</string>
+    <string name="s_droplet_size">ドロップのサイズ</string>
+    <string name="s_icon_size">アプリアイコンのサイズ</string>
+    <string name="sec_tap_zone">タップ反応ゾーン</string>
+    <string name="s_tap_zone_x">タップゾーンのオフセットX</string>
+    <string name="s_tap_zone_y">タップゾーンのオフセットY</string>
+    <string name="s_tap_zone_w">タップゾーンの幅 (0 = 自動)</string>
+    <string name="s_tap_zone_h">タップゾーンの高さ (0 = 自動)</string>
+    <string name="tap_zone_hint">タップがリングに届かない場合は調整してください。ここで設定中は、枠線がタップゾーンを示します。</string>
+    <string name="s_peek_width">メッセージカードの幅</string>
+    <string name="s_peek_height">メッセージカードの最大高さ</string>
+    <string name="s_peek_lines">メッセージプレビューの行数</string>
+    <string name="s_peek_font_size">メッセージのフォントサイズ</string>
+    <string name="t_charge_screen_on">画面オン時の充電リング</string>
+    <string name="chips_charge_timeout_aod">充電タイマー(画面オフ時)</string>
+    <string name="chips_charge_timeout_on">充電タイマー(画面オン時)</string>
+    <string name="sec_battery_metrics">リング下のバッテリー統計</string>
+    <string name="t_charge_show_percent">バッテリーの割合 (%)</string>
+    <string name="t_charge_show_voltage">バッテリー電圧 (V)</string>
+    <string name="t_charge_show_current">現在の電流 (mA)</string>
+    <string name="t_charge_show_power">充電電力 (W)</string>
 </resources>

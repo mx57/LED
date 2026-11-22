@@ -342,4 +342,36 @@
     <string name="sc_download_sub">Una descarga llena el anillo, con una flecha ↓.</string>
     <string name="sc_upload">Subiendo</string>
     <string name="sc_upload_sub">Una subida llena el anillo, con una flecha ↑.</string>
+    <string name="t_peek_expandable">Mensajes expandibles</string>
+    <string name="peek_expand">Expandir (%d)</string>
+    <string name="peek_expand_single">Expandir</string>
+    <string name="peek_collapse">Contraer</string>
+    <string name="peek_mark_all_read">Marcar todo como leído</string>
+    <string name="peek_messages_count">%1$s · %2$d mensajes</string>
+    <string name="reply_recent_context">Mensajes recientes</string>
+    <string name="quick_reply_ok">OK</string>
+    <string name="quick_reply_thanks">¡Gracias!</string>
+    <string name="quick_reply_on_my_way">Voy en camino</string>
+    <string name="quick_reply_later">Más tarde</string>
+    <string name="t_overlay_tap_messages">Toca el anillo para leer los mensajes</string>
+    <string name="s_droplet_size">Tamaño de la gota</string>
+    <string name="s_icon_size">Tamaño del icono de app</string>
+    <string name="sec_tap_zone">Zona de respuesta táctil</string>
+    <string name="s_tap_zone_x">Desplazamiento X de la zona táctil</string>
+    <string name="s_tap_zone_y">Desplazamiento Y de la zona táctil</string>
+    <string name="s_tap_zone_w">Ancho de la zona táctil (0 = auto)</string>
+    <string name="s_tap_zone_h">Alto de la zona táctil (0 = auto)</string>
+    <string name="tap_zone_hint">Ajusta si los toques no llegan al anillo. Un borde muestra la zona táctil mientras la configuras aquí.</string>
+    <string name="s_peek_width">Ancho de la tarjeta de mensajes</string>
+    <string name="s_peek_height">Altura máx. de la tarjeta de mensajes</string>
+    <string name="s_peek_lines">Líneas de vista previa del mensaje</string>
+    <string name="s_peek_font_size">Tamaño de letra del mensaje</string>
+    <string name="t_charge_screen_on">Anillo de carga con pantalla encendida</string>
+    <string name="chips_charge_timeout_aod">Temporizador de carga (pantalla apagada)</string>
+    <string name="chips_charge_timeout_on">Temporizador de carga (pantalla encendida)</string>
+    <string name="sec_battery_metrics">Estadísticas de batería bajo el anillo</string>
+    <string name="t_charge_show_percent">Porcentaje de batería (%)</string>
+    <string name="t_charge_show_voltage">Voltaje de la batería (V)</string>
+    <string name="t_charge_show_current">Amperaje actual (mA)</string>
+    <string name="t_charge_show_power">Potencia de carga (W)</string>
 </resources>

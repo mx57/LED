@@ -342,4 +342,36 @@
     <string name="sc_download_sub">Ein Download füllt den Ring, mit einem ↓-Pfeil.</string>
     <string name="sc_upload">Upload</string>
     <string name="sc_upload_sub">Ein Upload füllt den Ring, mit einem ↑-Pfeil.</string>
+    <string name="t_peek_expandable">Erweiterbare Nachrichten</string>
+    <string name="peek_expand">Ausklappen (%d)</string>
+    <string name="peek_expand_single">Ausklappen</string>
+    <string name="peek_collapse">Einklappen</string>
+    <string name="peek_mark_all_read">Alle als gelesen</string>
+    <string name="peek_messages_count">%1$s · %2$d Nachrichten</string>
+    <string name="reply_recent_context">Letzte Nachrichten</string>
+    <string name="quick_reply_ok">OK</string>
+    <string name="quick_reply_thanks">Danke!</string>
+    <string name="quick_reply_on_my_way">Bin unterwegs</string>
+    <string name="quick_reply_later">Später</string>
+    <string name="t_overlay_tap_messages">Ring antippen, um Nachrichten zu lesen</string>
+    <string name="s_droplet_size">Tropfengröße</string>
+    <string name="s_icon_size">App-Symbolgröße</string>
+    <string name="sec_tap_zone">Tippzone</string>
+    <string name="s_tap_zone_x">Tippzone-Versatz X</string>
+    <string name="s_tap_zone_y">Tippzone-Versatz Y</string>
+    <string name="s_tap_zone_w">Tippzone-Breite (0 = auto)</string>
+    <string name="s_tap_zone_h">Tippzone-Höhe (0 = auto)</string>
+    <string name="tap_zone_hint">Passe die Tippzone an, wenn Antippen den Ring nicht erreicht. Während der Einrichtung zeigt ein Rahmen die Tippzone.</string>
+    <string name="s_peek_width">Breite der Nachrichtenkarte</string>
+    <string name="s_peek_height">Maximale Höhe der Nachrichtenkarte</string>
+    <string name="s_peek_lines">Vorschauzeilen der Nachricht</string>
+    <string name="s_peek_font_size">Schriftgröße der Nachricht</string>
+    <string name="t_charge_screen_on">Ladering bei eingeschaltetem Bildschirm</string>
+    <string name="chips_charge_timeout_aod">Lade-Timer (Bildschirm aus)</string>
+    <string name="chips_charge_timeout_on">Lade-Timer (Bildschirm an)</string>
+    <string name="sec_battery_metrics">Akku-Statistiken unter dem Ring</string>
+    <string name="t_charge_show_percent">Akkustand (%)</string>
+    <string name="t_charge_show_voltage">Akku-Spannung (V)</string>
+    <string name="t_charge_show_current">Stromstärke (mA)</string>
+    <string name="t_charge_show_power">Ladeleistung (W)</string>
 </resources>

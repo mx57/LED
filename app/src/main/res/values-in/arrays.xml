@@ -62,4 +62,18 @@
         <item>Terang</item>
         <item>Sistem</item>
     </string-array>
+    <string-array name="charge_timeout_aod_labels">
+        <item>Selalu</item>
+        <item>5 dtk</item>
+        <item>15 dtk</item>
+        <item>30 dtk</item>
+        <item>1 mnt</item>
+        <item>5 mnt</item>
+    </string-array>
+    <string-array name="charge_timeout_on_labels">
+        <item>Selalu</item>
+        <item>5 dtk</item>
+        <item>10 dtk</item>
+        <item>30 dtk</item>
+    </string-array>
 </resources>

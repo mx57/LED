@@ -342,4 +342,36 @@
     <string name="sc_download_sub">डाउनलोड रिंग को ↓ तीर के साथ भरता है।</string>
     <string name="sc_upload">अपलोड</string>
     <string name="sc_upload_sub">अपलोड रिंग को ↑ तीर के साथ भरता है।</string>
+    <string name="t_peek_expandable">विस्तार योग्य संदेश</string>
+    <string name="peek_expand">विस्तारित करें (%d)</string>
+    <string name="peek_expand_single">विस्तारित करें</string>
+    <string name="peek_collapse">छोटा करें</string>
+    <string name="peek_mark_all_read">सभी पढ़े हुए मार्क करें</string>
+    <string name="peek_messages_count">%1$s · %2$d संदेश</string>
+    <string name="reply_recent_context">हाल के संदेश</string>
+    <string name="quick_reply_ok">ठीक है</string>
+    <string name="quick_reply_thanks">धन्यवाद!</string>
+    <string name="quick_reply_on_my_way">मैं आ रहा हूँ</string>
+    <string name="quick_reply_later">बाद में</string>
+    <string name="t_overlay_tap_messages">संदेश पढ़ने के लिए रिंग पर टैप करें</string>
+    <string name="s_droplet_size">बूंद का आकार</string>
+    <string name="s_icon_size">ऐप आइकन का आकार</string>
+    <string name="sec_tap_zone">टैप प्रतिक्रिया क्षेत्र</string>
+    <string name="s_tap_zone_x">टैप क्षेत्र ऑफ़सेट X</string>
+    <string name="s_tap_zone_y">टैप क्षेत्र ऑफ़सेट Y</string>
+    <string name="s_tap_zone_w">टैप क्षेत्र की चौड़ाई (0 = ऑटो)</string>
+    <string name="s_tap_zone_h">टैप क्षेत्र की ऊँचाई (0 = ऑटो)</string>
+    <string name="tap_zone_hint">अगर टैप रिंग तक नहीं पहुँचते तो समायोजित करें। यहाँ सेट करते समय बॉर्डर टैप क्षेत्र दिखाता है।</string>
+    <string name="s_peek_width">संदेश पैनल की चौड़ाई</string>
+    <string name="s_peek_height">संदेश पैनल की अधिकतम ऊँचाई</string>
+    <string name="s_peek_lines">संदेश पूर्वावलोकन पंक्तियाँ</string>
+    <string name="s_peek_font_size">संदेश फ़ॉन्ट आकार</string>
+    <string name="t_charge_screen_on">स्क्रीन चालू होने पर चार्जिंग रिंग</string>
+    <string name="chips_charge_timeout_aod">चार्ज टाइमर (स्क्रीन बंद)</string>
+    <string name="chips_charge_timeout_on">चार्ज टाइमर (स्क्रीन चालू)</string>
+    <string name="sec_battery_metrics">रिंग के नीचे बैटरी आँकड़े</string>
+    <string name="t_charge_show_percent">बैटरी प्रतिशत (%)</string>
+    <string name="t_charge_show_voltage">बैटरी वोल्टेज (V)</string>
+    <string name="t_charge_show_current">वर्तमान एम्पीयर (mA)</string>
+    <string name="t_charge_show_power">चार्जिंग शक्ति (W)</string>
 </resources>

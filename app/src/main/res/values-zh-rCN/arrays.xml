@@ -62,4 +62,18 @@
         <item>浅色</item>
         <item>跟随系统</item>
     </string-array>
+    <string-array name="charge_timeout_aod_labels">
+        <item>始终</item>
+        <item>5 秒</item>
+        <item>15 秒</item>
+        <item>30 秒</item>
+        <item>1 分钟</item>
+        <item>5 分钟</item>
+    </string-array>
+    <string-array name="charge_timeout_on_labels">
+        <item>始终</item>
+        <item>5 秒</item>
+        <item>10 秒</item>
+        <item>30 秒</item>
+    </string-array>
 </resources>

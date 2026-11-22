@@ -342,4 +342,36 @@
     <string name="sc_download_sub">Unduhan mengisi cincin, dengan panah ↓.</string>
     <string name="sc_upload">Mengunggah</string>
     <string name="sc_upload_sub">Unggahan mengisi cincin, dengan panah ↑.</string>
+    <string name="t_peek_expandable">Pesan yang dapat diperluas</string>
+    <string name="peek_expand">Perluas (%d)</string>
+    <string name="peek_expand_single">Perluas</string>
+    <string name="peek_collapse">Tutup</string>
+    <string name="peek_mark_all_read">Tandai semua dibaca</string>
+    <string name="peek_messages_count">%1$s · %2$d pesan</string>
+    <string name="reply_recent_context">Pesan terbaru</string>
+    <string name="quick_reply_ok">OK</string>
+    <string name="quick_reply_thanks">Terima kasih!</string>
+    <string name="quick_reply_on_my_way">Sedang dalam perjalanan</string>
+    <string name="quick_reply_later">Nanti</string>
+    <string name="t_overlay_tap_messages">Ketuk cincin untuk membaca pesan</string>
+    <string name="s_droplet_size">Ukuran tetesan</string>
+    <string name="s_icon_size">Ukuran ikon aplikasi</string>
+    <string name="sec_tap_zone">Zona respons ketukan</string>
+    <string name="s_tap_zone_x">Ofset zona ketuk X</string>
+    <string name="s_tap_zone_y">Ofset zona ketuk Y</string>
+    <string name="s_tap_zone_w">Lebar zona ketuk (0 = otomatis)</string>
+    <string name="s_tap_zone_h">Tinggi zona ketuk (0 = otomatis)</string>
+    <string name="tap_zone_hint">Sesuaikan jika ketukan tidak mencapai cincin. Sebuah bingkai menampilkan zona ketuk saat Anda mengaturnya di sini.</string>
+    <string name="s_peek_width">Lebar kartu pesan</string>
+    <string name="s_peek_height">Tinggi maks. kartu pesan</string>
+    <string name="s_peek_lines">Baris pratinjau pesan</string>
+    <string name="s_peek_font_size">Ukuran font pesan</string>
+    <string name="t_charge_screen_on">Cincin pengisian saat layar menyala</string>
+    <string name="chips_charge_timeout_aod">Pengatur waktu pengisian (layar mati)</string>
+    <string name="chips_charge_timeout_on">Pengatur waktu pengisian (layar menyala)</string>
+    <string name="sec_battery_metrics">Statistik baterai di bawah cincin</string>
+    <string name="t_charge_show_percent">Persentase baterai (%)</string>
+    <string name="t_charge_show_voltage">Tegangan baterai (V)</string>
+    <string name="t_charge_show_current">Arus sekarang (mA)</string>
+    <string name="t_charge_show_power">Daya pengisian (W)</string>
 </resources>

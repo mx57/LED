@@ -342,4 +342,36 @@
     <string name="sc_download_sub">Um download enche o anel, com uma seta ↓.</string>
     <string name="sc_upload">Enviando</string>
     <string name="sc_upload_sub">Um envio enche o anel, com uma seta ↑.</string>
+    <string name="t_peek_expandable">Mensagens expansíveis</string>
+    <string name="peek_expand">Expandir (%d)</string>
+    <string name="peek_expand_single">Expandir</string>
+    <string name="peek_collapse">Recolher</string>
+    <string name="peek_mark_all_read">Marcar tudo como lido</string>
+    <string name="peek_messages_count">%1$s · %2$d mensagens</string>
+    <string name="reply_recent_context">Mensagens recentes</string>
+    <string name="quick_reply_ok">OK</string>
+    <string name="quick_reply_thanks">Obrigado!</string>
+    <string name="quick_reply_on_my_way">Estou indo</string>
+    <string name="quick_reply_later">Depois</string>
+    <string name="t_overlay_tap_messages">Toque no anel para ler as mensagens</string>
+    <string name="s_droplet_size">Tamanho da gota</string>
+    <string name="s_icon_size">Tamanho do ícone do app</string>
+    <string name="sec_tap_zone">Zona de resposta ao toque</string>
+    <string name="s_tap_zone_x">Deslocamento X da zona de toque</string>
+    <string name="s_tap_zone_y">Deslocamento Y da zona de toque</string>
+    <string name="s_tap_zone_w">Largura da zona de toque (0 = auto)</string>
+    <string name="s_tap_zone_h">Altura da zona de toque (0 = auto)</string>
+    <string name="tap_zone_hint">Ajuste se os toques não alcançam o anel. Uma borda mostra a zona de toque enquanto você a configura aqui.</string>
+    <string name="s_peek_width">Largura do cartão de mensagens</string>
+    <string name="s_peek_height">Altura máx. do cartão de mensagens</string>
+    <string name="s_peek_lines">Linhas de visualização da mensagem</string>
+    <string name="s_peek_font_size">Tamanho da fonte da mensagem</string>
+    <string name="t_charge_screen_on">Anel de carregamento com a tela ligada</string>
+    <string name="chips_charge_timeout_aod">Timer de carregamento (tela desligada)</string>
+    <string name="chips_charge_timeout_on">Timer de carregamento (tela ligada)</string>
+    <string name="sec_battery_metrics">Estatísticas de bateria sob o anel</string>
+    <string name="t_charge_show_percent">Porcentagem da bateria (%)</string>
+    <string name="t_charge_show_voltage">Voltagem da bateria (V)</string>
+    <string name="t_charge_show_current">Amperagem atual (mA)</string>
+    <string name="t_charge_show_power">Potência de carregamento (W)</string>
 </resources>

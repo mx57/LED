@@ -62,4 +62,18 @@
         <item>Hell</item>
         <item>System</item>
     </string-array>
+    <string-array name="charge_timeout_aod_labels">
+        <item>Immer</item>
+        <item>5 s</item>
+        <item>15 s</item>
+        <item>30 s</item>
+        <item>1 Min.</item>
+        <item>5 Min.</item>
+    </string-array>
+    <string-array name="charge_timeout_on_labels">
+        <item>Immer</item>
+        <item>5 s</item>
+        <item>10 s</item>
+        <item>30 s</item>
+    </string-array>
 </resources>
