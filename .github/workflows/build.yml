@@ -26,6 +26,18 @@ jobs:
       - name: Unit tests & lint
         run: ./gradlew --no-daemon testDebugUnitTest lintDebug
 
+      # The updater compares the app version with GitHub releases, and the release notes are cut
+      # from the newest CHANGELOG section - a mismatch ships wrong notes and a permanent
+      # "update available" nag. Fail early when they disagree.
+      - name: Check version consistency
+        run: |
+          APP_VERSION=$(grep -m1 'versionName' app/build.gradle.kts | sed -E 's/.*"([^"]*)".*/\1/')
+          CHANGELOG_VERSION=$(sed -n '1,5p' CHANGELOG.md | grep -m1 -oE '[0-9]+(\.[0-9]+){2}')
+          if [ "$APP_VERSION" != "$CHANGELOG_VERSION" ]; then
+            echo "::error::app versionName ($APP_VERSION) does not match the newest CHANGELOG entry ($CHANGELOG_VERSION)"
+            exit 1
+          fi
+
       - name: Set up release signing
         env:
           KEYSTORE_BASE64: ${{ secrets.GLOWLED_KEYSTORE_BASE64 }}
@@ -52,29 +64,6 @@ jobs:
           cp app/build/outputs/apk/release/app-release.apk "dist/GlowLED-v${VERSION}.apk"
           cp "dist/GlowLED-v${VERSION}.apk" dist/GlowLED-latest.apk
           (cd dist && sha256sum *.apk > SHA256SUMS.txt)
-
-      # Without signing secrets, publish the signed APK already committed in releases/ instead -
-      # but only after checking it carries the official Glow LED signing certificate.
-      - name: Use committed signed APK
-        if: env.SIGNED != 'release'
-        run: |
-          APK="releases/GlowLED-v${VERSION}.apk"
-          if [ ! -f "$APK" ]; then
-            echo "::warning::No $APK committed and no signing secrets - skipping the release."
-            exit 0
-          fi
-          OFFICIAL="5d04de1a96a80107ec87658382b063f15c53cfea8043f554a339f285fe0c5023"
-          APKSIGNER="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner"
-          CERT=$("$APKSIGNER" verify --print-certs "$APK" | grep -m1 'certificate SHA-256 digest' | awk '{print $NF}')
-          if [ "$CERT" != "$OFFICIAL" ]; then
-            echo "::error::$APK is not signed with the official key ($CERT) - not publishing."
-            exit 1
-          fi
-          rm -f dist/*.apk
-          cp "$APK" "dist/GlowLED-v${VERSION}.apk"
-          cp "dist/GlowLED-v${VERSION}.apk" dist/GlowLED-latest.apk
-          (cd dist && sha256sum *.apk > SHA256SUMS.txt)
-          echo "SIGNED=release" >> "$GITHUB_ENV"
 
       # Release notes = only the newest section of CHANGELOG.md.
       - name: Release notes

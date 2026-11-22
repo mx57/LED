@@ -7,9 +7,9 @@
 **The notification light your phone forgot.**<br/>
 A soft ring glows around the camera hole when something needs you, on any brand, at almost no battery cost.
 
-<a href="https://github.com/ankitchanki/LED/releases/latest/download/GlowLED-latest.apk"><img src="https://img.shields.io/badge/Download-latest%20APK-00E5FF?style=for-the-badge&logo=android&logoColor=black" alt="Download the latest APK" /></a>
+<a href="https://github.com/mx57/LED/releases/latest/download/GlowLED-latest.apk"><img src="https://img.shields.io/badge/Download-latest%20APK-00E5FF?style=for-the-badge&logo=android&logoColor=black" alt="Download the latest APK" /></a>
 
-<img src="https://img.shields.io/github/v/release/ankitchanki/LED?style=flat-square&label=version&color=00E5FF" alt="Latest version" />
+<img src="https://img.shields.io/github/v/release/mx57/LED?style=flat-square&label=version&color=00E5FF" alt="Latest version" />
 <img src="https://img.shields.io/badge/Android-10%2B-34A853?style=flat-square&logo=android&logoColor=white" alt="Android 10 and up" />
 <img src="https://img.shields.io/badge/languages-13-5E5CE6?style=flat-square" alt="13 languages" />
 <img src="https://img.shields.io/badge/license-MIT-8E8E93?style=flat-square" alt="MIT license" />
@@ -121,13 +121,13 @@ direction. The icon sits in a small gap at the bottom of the ring, in the ring's
 
 ## Install
 
-1. Download **[GlowLED-latest.apk](https://github.com/ankitchanki/LED/releases/latest/download/GlowLED-latest.apk)** and open it.
+1. Download **[GlowLED-latest.apk](https://github.com/mx57/LED/releases/latest/download/GlowLED-latest.apk)** and open it.
 2. Open Glow LED and go through **Setup**: *Notification access* (required), *Display over other apps*,
    *Unrestricted battery*, and on Xiaomi/OPPO/vivo and similar *Autostart*. *Accessibility* is optional.
 3. **Style → Camera position → Auto-detect**, then tap the floating **Test** pill and turn the screen off.
 
-Later versions install from **Settings → Updates**, inside the app. Every APK is signed with the
-official key (SHA-256 `5D:04:DE:1A…0C:50:23`), so updates keep your settings.
+Later versions install from **Settings → Updates**, inside the app. Every APK is signed with this
+fork's release key, so updates keep your settings.
 
 <details>
 <summary><b>"App blocked to protect your device" (Play Protect)</b></summary>
@@ -227,6 +227,6 @@ NotificationListenerService ──► NotificationStore ──► LedController
 
 <div align="center">
 
-[Changelog](CHANGELOG.md) · [All downloads](releases/) · [MIT License](LICENSE)
+[Changelog](CHANGELOG.md) · [All downloads](https://github.com/mx57/LED/releases) · [MIT License](LICENSE)
 
 </div>
