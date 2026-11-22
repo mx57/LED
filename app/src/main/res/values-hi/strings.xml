@@ -374,4 +374,23 @@
     <string name="t_charge_show_voltage">बैटरी वोल्टेज (V)</string>
     <string name="t_charge_show_current">वर्तमान एम्पीयर (mA)</string>
     <string name="t_charge_show_power">चार्जिंग शक्ति (W)</string>
+    <string name="sec_cpu">CPU लोड</string>
+    <string name="t_cpu_indicator">CPU लोड दिखाएँ</string>
+    <string name="t_cpu_show_label">\"CPU\" उपसर्ग दिखाएँ</string>
+    <string name="chips_cpu_pos">रिंग के सापेक्ष स्थिति</string>
+    <string name="s_cpu_font_size">CPU टेक्स्ट आकार</string>
+    <string name="s_cpu_offset_x">ऑफ़सेट X</string>
+    <string name="s_cpu_offset_y">ऑफ़सेट Y</string>
+    <string name="g_diag">निदान</string>
+    <string name="g_diag_sub">सिस्टम स्थिति और स्वास्थ्य</string>
+    <string name="diag_export">रिपोर्ट निर्यात करें</string>
+    <string name="diag_telemetry">AOD (24 घं.): %1$d जागना · %2$d सेकंड एनिमेटेड · %3$d सेकंड स्थिर</string>
+    <string name="restore_confirm_msg">संस्करण %3$s से %1$d सेटिंग्स मिलीं (%2$d ऐप नियम शामिल)।
+
+मौजूदा सेटिंग्स बदलें?</string>
+    <string name="sec_snooze">अस्थायी ठहराव</string>
+    <string name="snooze_title">LED रोकें (स्नूज़)</string>
+    <string name="snooze_off">बंद</string>
+    <string name="tile_snooze_sub">रुका हुआ · %d मिनट</string>
+    <string name="block_snoozed">उपयोगकर्ता द्वारा रोका गया</string>
 </resources>

@@ -28,9 +28,10 @@ object NotificationStore {
         val readAction: android.app.Notification.Action? = null,
         /** Can be swiped away (used for "Dismiss" when the app has no mark-as-read action). */
         val clearable: Boolean = true,
+        val isPriority: Boolean = false,
     ) {
         /** Same LED/peek appearance (ignores the PendingIntent identity). */
-        fun sameLook(o: Entry?) = o != null && o.color == color && o.title == title && o.lines == lines && o.kind == kind
+        fun sameLook(o: Entry?) = o != null && o.color == color && o.title == title && o.lines == lines && o.kind == kind && o.isPriority == isPriority
     }
 
     private val entries = LinkedHashMap<String, Entry>()
@@ -110,11 +111,13 @@ object NotificationStore {
         val smallIcon: android.graphics.drawable.Icon? = null,
     )
 
-    /** Apps with unseen notifications, newest first, with how many each has. */
+    /** Apps with unseen notifications, priority apps first then newest first, with how many each has. */
     @Synchronized
     fun apps(): List<AppInfo> {
         val out = LinkedHashMap<String, AppInfo>()
-        entries.values.sortedByDescending { it.time }.forEach {
+        entries.values.sortedWith(
+            compareByDescending<Entry> { it.isPriority }.thenByDescending { it.time }
+        ).forEach {
             if (it.key in seen) return@forEach
             val prev = out[it.pkg]
             out[it.pkg] = if (prev == null) AppInfo(it.pkg, it.color, 1, it.smallIcon) else prev.copy(count = prev.count + 1)
@@ -131,11 +134,13 @@ object NotificationStore {
     fun entriesFor(pkg: String): List<Entry> =
         entries.values.filter { it.pkg == pkg && it.key !in seen }.sortedByDescending { it.time }
 
-    /** Distinct colors of unseen notifications, newest first (max [limit]). */
+    /** Distinct colors of unseen notifications, priority apps first then newest first (max [limit]). */
     @Synchronized
     fun colors(limit: Int = 6): IntArray {
         val out = LinkedHashSet<Int>()
-        entries.values.sortedByDescending { it.time }.forEach {
+        entries.values.sortedWith(
+            compareByDescending<Entry> { it.isPriority }.thenByDescending { it.time }
+        ).forEach {
             if (it.key !in seen) out.add(it.color)
         }
         return out.take(limit).toIntArray()

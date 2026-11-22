@@ -76,4 +76,10 @@
         <item>10 s</item>
         <item>30 s</item>
     </string-array>
+    <string-array name="cpu_pos_labels">
+        <item>Debajo</item>
+        <item>Derecha</item>
+        <item>Izquierda</item>
+        <item>Arriba</item>
+    </string-array>
 </resources>

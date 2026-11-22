@@ -81,11 +81,10 @@ object LedController {
     /** Set when an AOD session ended (timeout / user) so we don't relight for the same notifications. */
     private var suppressed = false
     private var ourWakeUntil = 0L
-    private var initialized = false
+    private val initialized = java.util.concurrent.atomic.AtomicBoolean(false)
 
     fun init(context: Context) {
-        if (initialized) return
-        initialized = true
+        if (!initialized.compareAndSet(false, true)) return
         app = context.applicationContext
         prefs = Prefs(app)
         colors = ColorResolver(app, prefs)
@@ -99,6 +98,7 @@ object LedController {
         }
         ContextCompat.registerReceiver(app, screenReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
         syncBatteryWatch()
+        syncCpuWatch()
         watchDisplayState()
         prefs.sp.registerOnSharedPreferenceChangeListener(prefListener)
         // The job service can be missing or over its limit on some builds; updates are optional.
@@ -109,6 +109,7 @@ object LedController {
     private val prefsChanged = Runnable {
         NotifyListenerService.instance?.rebuild()
         syncBatteryWatch()
+        syncCpuWatch()
         refreshAll()
     }
     private val prefListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
@@ -120,7 +121,13 @@ object LedController {
 
     fun addListener(l: () -> Unit) = listeners.add(l)
     fun removeListener(l: () -> Unit) = listeners.remove(l)
-    private fun notifyListeners() = listeners.forEach { it() }
+    private fun notifyListeners() {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            listeners.forEach { it() }
+        } else {
+            main.post { listeners.forEach { it() } }
+        }
+    }
 
     fun refreshAll() {
         notifyListeners()
@@ -181,6 +188,10 @@ object LedController {
             when (i.action) {
                 Intent.ACTION_SCREEN_OFF -> {
                     OverlayHost.hide()
+                    syncCpuWatch()
+                    if (plugged && prefs.chargeLed && prefs.chargeAod && prefs.chargeTimeoutAodSec > 0) {
+                        chargeAodUntil = SystemClock.uptimeMillis() + prefs.chargeTimeoutAodSec * 1000L
+                    }
                     when {
                         aodVisible -> DebugLog.add("Screen OFF while the light is showing")
                         !prefs.aodOnScreenOff -> DebugLog.add("Screen off (show-on-screen-off is disabled)")
@@ -202,6 +213,7 @@ object LedController {
                         cancelPulse()
                         disarmMotion()
                     }
+                    syncCpuWatch()
                     updateOverlay()
                 }
                 Intent.ACTION_USER_PRESENT -> {
@@ -212,6 +224,7 @@ object LedController {
                         NotificationStore.markAllSeen()
                         notifyListeners()
                     }
+                    syncCpuWatch()
                     updateOverlay()
                 }
                 Intent.ACTION_CONFIGURATION_CHANGED -> updateOverlay()
@@ -220,11 +233,13 @@ object LedController {
                     chargeFlashUntil = now + CHARGE_FLASH_MS
                     chargeScreenOnUntil = if (prefs.chargeTimeoutOnSec > 0) now + prefs.chargeTimeoutOnSec * 1000L else Long.MAX_VALUE
                     chargeAodUntil = if (prefs.chargeTimeoutAodSec > 0) now + prefs.chargeTimeoutAodSec * 1000L else Long.MAX_VALUE
-                    if (prefs.chargeTimeoutOnSec > 0) {
-                        main.postDelayed({ updateOverlay(); notifyListeners() }, prefs.chargeTimeoutOnSec * 1000L + 50)
-                    }
-                    if (prefs.chargeTimeoutAodSec > 0) {
-                        main.postDelayed({ updateOverlay(); notifyListeners() }, prefs.chargeTimeoutAodSec * 1000L + 50)
+                    main.removeCallbacks(chargeTimeoutTask)
+                    val next = listOfNotNull(
+                        chargeScreenOnUntil.takeIf { it > now && it < Long.MAX_VALUE },
+                        chargeAodUntil.takeIf { it > now && it < Long.MAX_VALUE },
+                    ).minOrNull()
+                    if (next != null) {
+                        main.postDelayed(chargeTimeoutTask, (next - now) + 50)
                     }
                     syncBatteryWatch(pluggedHint = true)
                     updateOverlay()
@@ -233,6 +248,7 @@ object LedController {
                 }
                 Intent.ACTION_POWER_DISCONNECTED -> {
                     DebugLog.add("Charger disconnected, ${state()}")
+                    main.removeCallbacks(chargeTimeoutTask)
                     chargeFlashUntil = 0L
                     chargeScreenOnUntil = 0L
                     chargeAodUntil = 0L
@@ -292,10 +308,10 @@ object LedController {
             // HyperOS/MIUI draw their lock screen over the lock-screen window for a moment when the
             // display wakes (a bright flash before the black screen), so use the overlay there.
             else -> !canLaunchFromBackground() || OemHelper.isXiaomi || OemHelper.miuiLockScreenAllowed(app) == false ||
-                prefs.sp.getBoolean(PREF_WINDOW_BLOCKED, false)
+                prefs.deviceSp.getBoolean(PREF_WINDOW_BLOCKED, false)
         }
         DebugLog.add("Method: ${if (useOverlay) "overlay" else "lock-screen window"} (setting: ${prefs.aodMethod}" +
-            ", window blocked before: ${prefs.sp.getBoolean(PREF_WINDOW_BLOCKED, false)}), ${state()}")
+            ", window blocked before: ${prefs.deviceSp.getBoolean(PREF_WINDOW_BLOCKED, false)}), ${state()}")
         if (useOverlay) {
             startOverlay(duration, preview)
             return
@@ -309,7 +325,7 @@ object LedController {
             main.postDelayed({
                 if (!aodVisible && !AodOverlay.isShowing && hasAodContent()) {
                     DebugLog.add("Lock-screen window was blocked by the system - switching to overlay")
-                    prefs.sp.edit().putBoolean(PREF_WINDOW_BLOCKED, true).apply()
+                    prefs.deviceSp.edit().putBoolean(PREF_WINDOW_BLOCKED, true).apply()
                     startOverlay(duration, false)
                 }
             }, 1300)
@@ -355,7 +371,7 @@ object LedController {
         val overlay = LedAccessibilityService.instance != null && prefs.aodMethod != "activity"
         return if (overlay) {
             DebugLog.add("Window started $px px below the camera - switching to the overlay now")
-            prefs.sp.edit().putBoolean(PREF_WINDOW_BLOCKED, true).apply()
+            prefs.deviceSp.edit().putBoolean(PREF_WINDOW_BLOCKED, true).apply()
             // Let the activity finish first, then show the overlay for the rest of the session.
             main.postDelayed({ startOverlay(durationSec, false) }, 120)
             true
@@ -449,6 +465,7 @@ object LedController {
             schedulePulse()
         }
         if (reason == EndReason.TIMEOUT && !NotificationStore.isEmpty()) armMotion()
+        syncCpuWatch()
         updateOverlay()
     }
 
@@ -573,15 +590,15 @@ object LedController {
     // ---- screen-on overlay ------------------------------------------------------------------------
 
     fun updateOverlay() {
-        if (!initialized) return
+        if (!initialized.get()) return
         val launching = SystemClock.uptimeMillis() < ourWakeUntil
         val portrait = prefs.style.isEdge || CutoutGeometry.isPortrait(app)
         val canShow = prefs.enabled && !aodVisible && !launching && !appInForeground && isInteractive() && portrait
         val notifRing = prefs.overlayEnabled && !NotificationStore.isEmpty() && (!prefs.overlayLockOnly || isLocked())
         overlayMeter = if (canShow) computeMeter(notifRing) else null
-        val show = canShow && (notifRing || overlayMeter != null || prefs.batteryIndicator)
+        val show = canShow && (notifRing || overlayMeter != null || prefs.batteryIndicator || prefs.cpuIndicator)
         if (!show && isInteractive() && !isLocked() && !NotificationStore.isEmpty()) {
-            DebugLog.add("Overlay off: can=$canShow enabled=${prefs.enabled} aod=$aodVisible fg=$appInForeground portrait=$portrait oE=${prefs.overlayEnabled} lockOnly=${prefs.overlayLockOnly} meter=${overlayMeter != null} batt=${prefs.batteryIndicator}")
+            DebugLog.add("Overlay off: can=$canShow enabled=${prefs.enabled} aod=$aodVisible fg=$appInForeground portrait=$portrait oE=${prefs.overlayEnabled} lockOnly=${prefs.overlayLockOnly} meter=${overlayMeter != null} batt=${prefs.batteryIndicator} cpu=${prefs.cpuIndicator}")
         }
         if (show) {
             OverlayHost.show(app)
@@ -595,6 +612,7 @@ object LedController {
         } else {
             OverlayHost.hide()
         }
+        syncCpuWatch()
     }
 
     // ---- charging ring and transfer ring (both views) ----------------------------------------------
@@ -614,6 +632,21 @@ object LedController {
     private var chargeAodUntil = 0L
     private var chargeScreenOnUntil = 0L
     private var batteryWatching = false
+
+    private val chargeTimeoutTask = object : Runnable {
+        override fun run() {
+            updateOverlay()
+            notifyListeners()
+            val now = SystemClock.uptimeMillis()
+            val next = listOfNotNull(
+                chargeScreenOnUntil.takeIf { it > now && it < Long.MAX_VALUE },
+                chargeAodUntil.takeIf { it > now && it < Long.MAX_VALUE },
+            ).minOrNull()
+            if (next != null) {
+                main.postDelayed(this, (next - now) + 50)
+            }
+        }
+    }
 
     /**
      * Whether there is anything for the screen-off light to show. Only things worth waking the
@@ -708,6 +741,46 @@ object LedController {
                 OverlayHost.updateBatteryText()
             }
             main.postDelayed(this, 3000L)
+        }
+    }
+
+    private const val CPU_TICK_MS = 2000L
+    private var cpuWatching = false
+    var cpuUsage: Int = -1
+        private set
+
+    fun cpuStatusText(): String? {
+        if (!prefs.cpuIndicator || cpuUsage < 0) return null
+        return if (prefs.cpuShowLabel) "CPU $cpuUsage%" else "$cpuUsage%"
+    }
+
+    private val cpuTicker = object : Runnable {
+        override fun run() {
+            if (!isInteractive() || !prefs.enabled || !prefs.cpuIndicator || aodVisible) {
+                cpuWatching = false
+                return
+            }
+            CpuStats.updateAsync { usage ->
+                if (!cpuWatching) return@updateAsync
+                cpuUsage = usage
+                notifyListeners()
+                OverlayHost.updateCpuText()
+                main.postDelayed(this, CPU_TICK_MS)
+            }
+        }
+    }
+
+    fun syncCpuWatch() {
+        val want = prefs.enabled && prefs.cpuIndicator && isInteractive() && !aodVisible
+        if (want && !cpuWatching) {
+            cpuWatching = true
+            main.removeCallbacks(cpuTicker)
+            main.post(cpuTicker)
+        } else if (!want && cpuWatching) {
+            cpuWatching = false
+            main.removeCallbacks(cpuTicker)
+            cpuUsage = -1
+            OverlayHost.updateCpuText()
         }
     }
 

@@ -28,6 +28,11 @@ android {
         targetSdk = 35
         versionCode = 36
         versionName = "2.11.1"
+
+        val updateRepo = (project.findProperty("UPDATE_REPO") as? String) ?: "mx57/LED"
+        val expectedSha = (project.findProperty("EXPECTED_SIGNING_SHA256") as? String) ?: ""
+        buildConfigField("String", "UPDATE_REPO", "\"$updateRepo\"")
+        buildConfigField("String", "EXPECTED_SIGNING_SHA256", "\"$expectedSha\"")
     }
 
     signingConfigs {
@@ -87,6 +92,13 @@ android {
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
+    lint {
+        // MissingTranslation stays ENABLED: every string must ship translated into all 12
+        // languages, and CI fails the build otherwise. (A blanket disable hid 32 untranslated
+        // keys in 11 locales for two releases.)
+        abortOnError = true
+        checkReleaseBuilds = false
+    }
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
@@ -102,4 +114,5 @@ dependencies {
     implementation("androidx.viewpager2:viewpager2:1.1.0")
 
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
 }

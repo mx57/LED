@@ -89,4 +89,59 @@ object BatteryStats {
             isCharging = isCharging,
         )
     }
+
+    data class AodTelemetry(
+        val sessionCount: Int,
+        val animDurationMs: Long,
+        val staticDurationMs: Long,
+    )
+
+    private const val KEY_AOD_SESSIONS_COUNT = "aod_sessions_count"
+    private const val KEY_AOD_ANIM_MS = "aod_anim_ms"
+    private const val KEY_AOD_STATIC_MS = "aod_static_ms"
+    private const val KEY_AOD_RESET_TIME = "aod_stats_reset"
+
+    /** Records duration of one completed AOD session (zero I/O on draw frames). */
+    fun recordAodSession(context: Context, animDurationMs: Long, staticDurationMs: Long) {
+        try {
+            val sp = context.applicationContext.getSharedPreferences("device_state", Context.MODE_PRIVATE)
+            val now = System.currentTimeMillis()
+            val lastReset = sp.getLong(KEY_AOD_RESET_TIME, 0L)
+            val e = sp.edit()
+            if (lastReset == 0L || now - lastReset > 24 * 3600 * 1000L) {
+                e.putLong(KEY_AOD_RESET_TIME, now)
+                e.putInt(KEY_AOD_SESSIONS_COUNT, 1)
+                e.putLong(KEY_AOD_ANIM_MS, animDurationMs.coerceAtLeast(0L))
+                e.putLong(KEY_AOD_STATIC_MS, staticDurationMs.coerceAtLeast(0L))
+            } else {
+                val count = sp.getInt(KEY_AOD_SESSIONS_COUNT, 0) + 1
+                val anim = sp.getLong(KEY_AOD_ANIM_MS, 0L) + animDurationMs.coerceAtLeast(0L)
+                val st = sp.getLong(KEY_AOD_STATIC_MS, 0L) + staticDurationMs.coerceAtLeast(0L)
+                e.putInt(KEY_AOD_SESSIONS_COUNT, count)
+                e.putLong(KEY_AOD_ANIM_MS, anim)
+                e.putLong(KEY_AOD_STATIC_MS, st)
+            }
+            e.apply()
+        } catch (_: Exception) {}
+    }
+
+    fun getAodTelemetry(context: Context): AodTelemetry {
+        return try {
+            val sp = context.applicationContext.getSharedPreferences("device_state", Context.MODE_PRIVATE)
+            val now = System.currentTimeMillis()
+            val lastReset = sp.getLong(KEY_AOD_RESET_TIME, 0L)
+            if (lastReset != 0L && now - lastReset > 24 * 3600 * 1000L) {
+                AodTelemetry(0, 0L, 0L)
+            } else {
+                AodTelemetry(
+                    sessionCount = sp.getInt(KEY_AOD_SESSIONS_COUNT, 0),
+                    animDurationMs = sp.getLong(KEY_AOD_ANIM_MS, 0L),
+                    staticDurationMs = sp.getLong(KEY_AOD_STATIC_MS, 0L),
+                )
+            }
+        } catch (_: Exception) {
+            AodTelemetry(0, 0L, 0L)
+        }
+    }
 }
+

@@ -76,4 +76,10 @@
         <item>10 秒</item>
         <item>30 秒</item>
     </string-array>
+    <string-array name="cpu_pos_labels">
+        <item>下方</item>
+        <item>右侧</item>
+        <item>左侧</item>
+        <item>上方</item>
+    </string-array>
 </resources>

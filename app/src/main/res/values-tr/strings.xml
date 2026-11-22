@@ -374,4 +374,23 @@
     <string name="t_charge_show_voltage">Pil voltajı (V)</string>
     <string name="t_charge_show_current">Güncel amper (mA)</string>
     <string name="t_charge_show_power">Şarj gücü (W)</string>
+    <string name="sec_cpu">İşlemci yükü</string>
+    <string name="t_cpu_indicator">İşlemci yükünü göster</string>
+    <string name="t_cpu_show_label">\"CPU\" önekini göster</string>
+    <string name="chips_cpu_pos">Halkaya göre konum</string>
+    <string name="s_cpu_font_size">CPU metin boyutu</string>
+    <string name="s_cpu_offset_x">X ofseti</string>
+    <string name="s_cpu_offset_y">Y ofseti</string>
+    <string name="g_diag">Teşhis</string>
+    <string name="g_diag_sub">Sistem durumu ve sağlık</string>
+    <string name="diag_export">Raporu dışa aktar</string>
+    <string name="diag_telemetry">AOD (24 sa): %1$d uyanma · %2$d sn animasyonlu · %3$d sn statik</string>
+    <string name="restore_confirm_msg">%3$s sürümünden %1$d ayar bulundu (%2$d uygulama kuralı dahil).
+
+Mevcut ayarların üzerine yazılsın mı?</string>
+    <string name="sec_snooze">Geçici duraklatma</string>
+    <string name="snooze_title">LED\'i duraklat (Erteleme)</string>
+    <string name="snooze_off">Kapalı</string>
+    <string name="tile_snooze_sub">Duraklatıldı · %d dk</string>
+    <string name="block_snoozed">Kullanıcı tarafından duraklatıldı</string>
 </resources>

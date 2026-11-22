@@ -374,4 +374,23 @@
     <string name="t_charge_show_voltage">Voltaje de la batería (V)</string>
     <string name="t_charge_show_current">Amperaje actual (mA)</string>
     <string name="t_charge_show_power">Potencia de carga (W)</string>
+    <string name="sec_cpu">Carga de CPU</string>
+    <string name="t_cpu_indicator">Mostrar carga de CPU</string>
+    <string name="t_cpu_show_label">Mostrar prefijo «CPU»</string>
+    <string name="chips_cpu_pos">Posición relativa al anillo</string>
+    <string name="s_cpu_font_size">Tamaño del texto de CPU</string>
+    <string name="s_cpu_offset_x">Desplazamiento X</string>
+    <string name="s_cpu_offset_y">Desplazamiento Y</string>
+    <string name="g_diag">Diagnóstico</string>
+    <string name="g_diag_sub">Estado del sistema y salud</string>
+    <string name="diag_export">Exportar informe</string>
+    <string name="diag_telemetry">AOD (24 h): %1$d activaciones · %2$d s animado · %3$d s estático</string>
+    <string name="restore_confirm_msg">Se encontraron %1$d ajustes (incluidas %2$d reglas de apps) de la versión %3$s.
+
+¿Sobrescribir los ajustes actuales?</string>
+    <string name="sec_snooze">Pausa temporal</string>
+    <string name="snooze_title">Pausar LED (Snooze)</string>
+    <string name="snooze_off">Apagado</string>
+    <string name="tile_snooze_sub">Pausado · %d min</string>
+    <string name="block_snoozed">Pausado por el usuario</string>
 </resources>

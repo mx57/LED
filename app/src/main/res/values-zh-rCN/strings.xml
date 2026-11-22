@@ -374,4 +374,23 @@
     <string name="t_charge_show_voltage">电池电压（V）</string>
     <string name="t_charge_show_current">当前电流（mA）</string>
     <string name="t_charge_show_power">充电功率（W）</string>
+    <string name="sec_cpu">CPU 负载</string>
+    <string name="t_cpu_indicator">显示 CPU 负载</string>
+    <string name="t_cpu_show_label">显示“CPU”前缀</string>
+    <string name="chips_cpu_pos">相对圆环的位置</string>
+    <string name="s_cpu_font_size">CPU 文字大小</string>
+    <string name="s_cpu_offset_x">X 偏移</string>
+    <string name="s_cpu_offset_y">Y 偏移</string>
+    <string name="g_diag">诊断</string>
+    <string name="g_diag_sub">系统状态与健康</string>
+    <string name="diag_export">导出报告</string>
+    <string name="diag_telemetry">AOD（24小时）：%1$d 次唤醒 · %2$d 秒动画 · %3$d 秒静态</string>
+    <string name="restore_confirm_msg">从版本 %3$s 找到 %1$d 项设置（含 %2$d 条应用规则）。
+
+是否覆盖当前设置？</string>
+    <string name="sec_snooze">暂时停用</string>
+    <string name="snooze_title">暂停 LED（稍后恢复）</string>
+    <string name="snooze_off">关</string>
+    <string name="tile_snooze_sub">已暂停 · %d 分钟</string>
+    <string name="block_snoozed">已被用户暂停</string>
 </resources>

@@ -374,4 +374,23 @@
     <string name="t_charge_show_voltage">Tegangan baterai (V)</string>
     <string name="t_charge_show_current">Arus sekarang (mA)</string>
     <string name="t_charge_show_power">Daya pengisian (W)</string>
+    <string name="sec_cpu">Beban CPU</string>
+    <string name="t_cpu_indicator">Tampilkan beban CPU</string>
+    <string name="t_cpu_show_label">Tampilkan awalan \"CPU\"</string>
+    <string name="chips_cpu_pos">Posisi relatif terhadap cincin</string>
+    <string name="s_cpu_font_size">Ukuran teks CPU</string>
+    <string name="s_cpu_offset_x">Ofset X</string>
+    <string name="s_cpu_offset_y">Ofset Y</string>
+    <string name="g_diag">Diagnostik</string>
+    <string name="g_diag_sub">Status &amp; kesehatan sistem</string>
+    <string name="diag_export">Ekspor laporan</string>
+    <string name="diag_telemetry">AOD (24 jam): %1$d kali bangun · %2$d dtk animasi · %3$d dtk statis</string>
+    <string name="restore_confirm_msg">Menemukan %1$d pengaturan (termasuk %2$d aturan aplikasi) dari versi %3$s.
+
+Timpa pengaturan saat ini?</string>
+    <string name="sec_snooze">Jeda sementara</string>
+    <string name="snooze_title">Jeda LED (Snooze)</string>
+    <string name="snooze_off">Mati</string>
+    <string name="tile_snooze_sub">Dijeda · %d mnt</string>
+    <string name="block_snoozed">Dijeda oleh pengguna</string>
 </resources>

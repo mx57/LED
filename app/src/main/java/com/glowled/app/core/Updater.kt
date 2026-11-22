@@ -22,8 +22,9 @@ import java.security.MessageDigest
  */
 object Updater {
 
-    private const val API = "https://api.github.com/repos/mx57/LED/releases/latest"
-    const val RELEASES_PAGE = "https://github.com/mx57/LED/releases"
+    val UPDATE_REPO: String get() = BuildConfig.UPDATE_REPO
+    val API: String get() = "https://api.github.com/repos/$UPDATE_REPO/releases/latest"
+    val RELEASES_PAGE: String get() = "https://github.com/$UPDATE_REPO/releases"
     private const val APK_NAME = "GlowLED-latest.apk"
     const val ACTION_INSTALL_STATUS = "com.glowled.app.UPDATE_INSTALL_STATUS"
     /**
@@ -47,7 +48,7 @@ object Updater {
     /** Fetches the latest release (network: call off the main thread). */
     @Throws(IOException::class)
     fun fetchLatest(): Release {
-        val json = JSONObject(get(API).bufferedReader().use { it.readText() })
+        val json = JSONObject(readText(API))
         val version = json.getString("tag_name").removePrefix("v")
         val assets = json.optJSONArray("assets")
         var url = ""
@@ -66,7 +67,7 @@ object Updater {
     /** Checks and remembers the result; returns the release, or null when the check failed. */
     fun check(context: Context): Release? = try {
         fetchLatest().also { r ->
-            LedController.prefs.sp.edit()
+            LedController.prefs.deviceSp.edit()
                 .putString(K_LATEST, r.version)
                 .putString(K_NOTES, r.notes)
                 .putLong(K_CHECKED, System.currentTimeMillis())
@@ -79,20 +80,30 @@ object Updater {
 
     /** The newest version seen by the last check, if it is newer than this one. */
     fun pendingVersion(): String? =
-        LedController.prefs.sp.getString(K_LATEST, null)?.takeIf { isNewer(it, BuildConfig.VERSION_NAME) }
+        LedController.prefs.deviceSp.getString(K_LATEST, null)?.takeIf { isNewer(it, BuildConfig.VERSION_NAME) }
 
-    private fun get(url: String): java.io.InputStream {
+    fun openConnection(url: String): HttpURLConnection {
         val c = URL(url).openConnection() as HttpURLConnection
         c.connectTimeout = 15_000
         c.readTimeout = 30_000
         c.instanceFollowRedirects = true
         c.setRequestProperty("Accept", "application/vnd.github+json")
         c.setRequestProperty("User-Agent", "GlowLED/${BuildConfig.VERSION_NAME}")
-        if (c.responseCode !in 200..299) {
+        return c
+    }
+
+    fun readText(url: String): String {
+        val c = openConnection(url)
+        return try {
+            val code = c.responseCode
+            if (code !in 200..299) {
+                val err = c.errorStream?.bufferedReader()?.use { it.readText() }
+                throw IOException("HTTP $code${if (!err.isNullOrBlank()) ": $err" else ""}")
+            }
+            c.inputStream.bufferedReader().use { it.readText() }
+        } finally {
             c.disconnect()
-            throw IOException("HTTP ${c.responseCode}")
         }
-        return c.inputStream
     }
 
     /** "2.10.0" is newer than "2.9.1"; anything after a "-" (like "-debug") is ignored. */
@@ -142,26 +153,53 @@ object Updater {
         val dir = File(context.cacheDir, "updates").apply { mkdirs() }
         dir.listFiles()?.forEach { it.delete() }
         val file = File(dir, "GlowLED-${r.version}.apk")
-        get(r.apkUrl).use { input ->
-            file.outputStream().use { out ->
-                val buf = ByteArray(64 * 1024)
-                var done = 0L
-                while (true) {
-                    if (cancelled()) throw IOException("cancelled")
-                    val n = input.read(buf)
-                    if (n < 0) break
-                    out.write(buf, 0, n)
-                    done += n
-                    if (r.size > 0) progress((done.toFloat() / r.size).coerceIn(0f, 1f))
+        val c = openConnection(r.apkUrl)
+        try {
+            val code = c.responseCode
+            if (code !in 200..299) {
+                val err = c.errorStream?.bufferedReader()?.use { it.readText() }
+                throw IOException("HTTP $code${if (!err.isNullOrBlank()) ": $err" else ""}")
+            }
+            c.inputStream.use { input ->
+                file.outputStream().use { out ->
+                    val buf = ByteArray(64 * 1024)
+                    var done = 0L
+                    while (true) {
+                        if (cancelled()) throw IOException("cancelled")
+                        val n = input.read(buf)
+                        if (n < 0) break
+                        out.write(buf, 0, n)
+                        done += n
+                        if (r.size > 0) progress((done.toFloat() / r.size).coerceIn(0f, 1f))
+                    }
                 }
             }
+        } finally {
+            c.disconnect()
         }
         return file
     }
 
+    fun currentAppCertSha256(context: Context): Set<String> {
+        val pm = context.packageManager
+        @Suppress("DEPRECATION")
+        val flags = PackageManager.GET_SIGNING_CERTIFICATES or PackageManager.GET_SIGNATURES
+        val myInfo = try {
+            pm.getPackageInfo(context.packageName, flags)
+        } catch (_: Exception) {
+            return emptySet()
+        }
+        @Suppress("DEPRECATION")
+        val certs = myInfo.signingInfo?.apkContentsSigners ?: myInfo.signatures ?: return emptySet()
+        val sha = MessageDigest.getInstance("SHA-256")
+        return certs.map { sha.digest(it.toByteArray()).joinToString("") { b -> "%02x".format(b) } }.toSet()
+    }
+
     /**
      * True when [apk] is Glow LED, newer than this install and signed with this fork's release
-     * key. Android refuses a different key anyway; this stops anything else before the prompt.
+     * key (or with the very key this install itself is signed with, so debug builds keep
+     * updating). Android refuses a different key anyway; this stops anything else before the
+     * prompt.
      */
     fun verify(context: Context, apk: File): Boolean {
         if (RELEASE_SHA256.isEmpty()) {
@@ -176,9 +214,14 @@ object Updater {
         if (info.longVersionCode <= BuildConfig.VERSION_CODE) return false
         @Suppress("DEPRECATION")
         val certs = info.signingInfo?.apkContentsSigners ?: info.signatures ?: return false
+        val expectedSha = when {
+            BuildConfig.EXPECTED_SIGNING_SHA256.isNotBlank() -> setOf(BuildConfig.EXPECTED_SIGNING_SHA256.lowercase())
+            else -> currentAppCertSha256(context).ifEmpty { setOf(RELEASE_SHA256) }
+        }
         val sha = MessageDigest.getInstance("SHA-256")
-        return certs.isNotEmpty() && certs.all {
-            sha.digest(it.toByteArray()).joinToString("") { b -> "%02x".format(b) } == RELEASE_SHA256
+        return certs.isNotEmpty() && certs.all { cert ->
+            val certHex = sha.digest(cert.toByteArray()).joinToString("") { b -> "%02x".format(b) }
+            certHex in expectedSha || certHex == RELEASE_SHA256
         }
     }
 

@@ -374,4 +374,23 @@
     <string name="t_charge_show_voltage">バッテリー電圧 (V)</string>
     <string name="t_charge_show_current">現在の電流 (mA)</string>
     <string name="t_charge_show_power">充電電力 (W)</string>
+    <string name="sec_cpu">CPU負荷</string>
+    <string name="t_cpu_indicator">CPU負荷を表示</string>
+    <string name="t_cpu_show_label">「CPU」プレフィックスを表示</string>
+    <string name="chips_cpu_pos">リングからの相対位置</string>
+    <string name="s_cpu_font_size">CPUテキストサイズ</string>
+    <string name="s_cpu_offset_x">オフセットX</string>
+    <string name="s_cpu_offset_y">オフセットY</string>
+    <string name="g_diag">診断</string>
+    <string name="g_diag_sub">システムの状態と健全性</string>
+    <string name="diag_export">レポートを書き出す</string>
+    <string name="diag_telemetry">AOD(24時間): %1$d回の復帰 · %2$d秒アニメーション · %3$d秒静止</string>
+    <string name="restore_confirm_msg">バージョン%3$sから%1$d件の設定(うち%2$d件のアプリルール)が見つかりました。
+
+現在の設定を上書きしますか？</string>
+    <string name="sec_snooze">一時停止</string>
+    <string name="snooze_title">LEDを一時停止(スヌーズ)</string>
+    <string name="snooze_off">オフ</string>
+    <string name="tile_snooze_sub">一時停止中 · %d分</string>
+    <string name="block_snoozed">ユーザーによる一時停止</string>
 </resources>

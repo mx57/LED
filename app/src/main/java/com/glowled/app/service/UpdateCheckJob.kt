@@ -63,7 +63,7 @@ class UpdateCheckJob : JobService() {
 
         /** One notification per new version. */
         fun notifyIfNew(context: Context, r: Updater.Release) {
-            val sp = LedController.prefs.sp
+            val sp = LedController.prefs.deviceSp
             if (!Updater.isNewer(r.version, BuildConfig.VERSION_NAME)) return
             if (sp.getString(Updater.K_NOTIFIED, null) == r.version) return
             if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) !=

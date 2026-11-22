@@ -136,7 +136,7 @@ class MainActivity : AppCompatActivity() {
     private fun applyPrefChange(key: String?) {
         if (key == "style") styleAdapter.notifyItemRangeChanged(0, styleAdapter.itemCount)
         // A new method choice gets a fresh chance to use the flicker-free lock-screen window.
-        if (key == "aod_method") prefs.sp.edit().remove(LedController.PREF_WINDOW_BLOCKED).apply()
+        if (key == "aod_method") prefs.deviceSp.edit().remove(LedController.PREF_WINDOW_BLOCKED).apply()
         configureCameraLed()
         if (key == "droplet" && prefs.droplet) {
             // Show what the setting does: on the real camera, and in the one-handed preview.
@@ -148,6 +148,10 @@ class MainActivity : AppCompatActivity() {
         if (key != null && (key.startsWith("charge_") || key.startsWith("progress_") || key == "upload_color" || key == "download_color")) previewMeter(key)
         if (key == "style" || key == Prefs.K_ENABLED) ui.refresh()
         if (key != null && key.startsWith("tap_zone_")) updateTapZoneOutline()
+        if (key == "snooze_choice") {
+            val mins = prefs.sp.getString("snooze_choice", "0")?.toIntOrNull() ?: 0
+            if (mins > 0) prefs.snooze(mins) else prefs.clearSnooze()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -281,6 +285,7 @@ class MainActivity : AppCompatActivity() {
         refreshLive()
         LedController.addListener(storeListener)
         NotifyListenerService.forceReconnect(this)
+        if (prefs.cpuIndicator) com.glowled.app.core.CpuStats.updateAsync { runOnUiThread { refreshLive() } }
         cameraLed.post { playCameraIntro() }
     }
 
@@ -319,6 +324,23 @@ class MainActivity : AppCompatActivity() {
         cameraLed.visibility = if (show) View.VISIBLE else View.INVISIBLE
         if (!show) return
         cameraLed.configure(prefs, CutoutGeometry.resolve(this, prefs), cameraColors())
+        if (prefs.cpuIndicator) {
+            val usage = if (LedController.cpuUsage >= 0) LedController.cpuUsage else com.glowled.app.core.CpuStats.cachedUsage
+            val text = if (usage >= 0) {
+                if (prefs.cpuShowLabel) "CPU $usage%" else "$usage%"
+            } else {
+                if (prefs.cpuShowLabel) "CPU …" else "…"
+            }
+            cameraLed.setCpuLoad(
+                text,
+                prefs.cpuPos,
+                prefs.cpuOffsetXDp,
+                prefs.cpuOffsetYDp,
+                prefs.cpuFontSizeSp
+            )
+        } else {
+            cameraLed.setCpuLoad(null)
+        }
         updateTapZoneOutline()
     }
 
@@ -642,6 +664,23 @@ class MainActivity : AppCompatActivity() {
             ColorItem(getString(R.string.c_mid), "charge_color_mid", 0xFFFFC400.toInt()),
             ColorItem(getString(R.string.c_high), "charge_color_high", 0xFF00E676.toInt()),
         ), dependsOn = chargeOn)
+        section(col, R.string.sec_cpu)
+        val cpuOn = { prefs.cpuIndicator }
+        ui.toggles(col, listOf(
+            Toggle(getString(R.string.t_cpu_indicator), "cpu_indicator", false),
+            Toggle(getString(R.string.t_cpu_show_label), "cpu_show_label", true, cpuOn),
+        ))
+        val cpuCard = ui.card(col)
+        ui.chips(cpuCard, getString(R.string.chips_cpu_pos), "cpu_pos",
+            labels(R.array.cpu_pos_labels), listOf("below", "right", "left", "above"), "below", cpuOn)
+        ui.sliders(cpuCard,
+            Range(getString(R.string.s_cpu_font_size), "cpu_font_size", 8, 24, 12, "sp"),
+            Range(getString(R.string.s_cpu_offset_x), "cpu_offset_x", -150, 150, 0, "dp"),
+            dependsOn = cpuOn)
+        ui.sliders(cpuCard,
+            Range(getString(R.string.s_cpu_offset_y), "cpu_offset_y", -150, 150, 0, "dp"),
+            dependsOn = cpuOn)
+        ui.dependOn(cpuCard.parent as View, cpuOn)
         section(col, R.string.sec_transfers)
         ui.toggles(col, listOf(
             Toggle(getString(R.string.t_progress), "progress_led", true),
@@ -702,6 +741,22 @@ class MainActivity : AppCompatActivity() {
         ui.chips(c, getString(R.string.chips_fps), "fps_cap",
             labels(R.array.fps_labels), listOf("15", "24", "30", "60", "0"), "30")
         ui.sliders(c, Range(getString(R.string.s_min_battery), "min_battery", 0, 50, 10, "%"))
+        section(col, R.string.sec_snooze)
+        val snoozeCard = ui.card(col)
+        ui.chips(snoozeCard, getString(R.string.snooze_title), "snooze_choice",
+            listOf(getString(R.string.snooze_off), "30m", "1h", "2h", "4h"),
+            listOf("0", "30", "60", "120", "240"),
+            if (prefs.isPaused) {
+                val left = (prefs.pausedUntilEpochMs - System.currentTimeMillis()) / 60_000L
+                when {
+                    left > 180 -> "240"
+                    left > 90 -> "120"
+                    left > 45 -> "60"
+                    left > 10 -> "30"
+                    else -> "0"
+                }
+            } else "0"
+        )
         section(col, R.string.t_quiet)
         ui.toggles(col, listOf(Toggle(getString(R.string.t_quiet), "quiet_enabled", false)))
         quietSub = ui.link(col, R.drawable.ic_s_clock, getString(R.string.quiet_time), quietText(), RowIcons.INDIGO) { pickQuietHours() }
@@ -718,7 +773,7 @@ class MainActivity : AppCompatActivity() {
     private fun updateText(): String {
         val cur = BuildConfig.VERSION_NAME.substringBefore('-')
         return Updater.pendingVersion()?.let { getString(R.string.upd_sub_available, it) }
-            ?: if (prefs.sp.contains(Updater.K_CHECKED)) getString(R.string.upd_sub_latest, cur)
+            ?: if (prefs.deviceSp.contains(Updater.K_CHECKED)) getString(R.string.upd_sub_latest, cur)
             else getString(R.string.upd_sub_unknown, cur)
     }
 
@@ -750,13 +805,28 @@ class MainActivity : AppCompatActivity() {
     }
     private val restoreLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri == null) return@registerForActivityResult
-        val n = SettingsBackup.read(this, prefs.sp, uri)
-        if (n < 0) {
+        val text = try {
+            contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() } ?: ""
+        } catch (_: Exception) { "" }
+        val summary = SettingsBackup.inspect(text)
+        if (!summary.isValid || summary.validSettingsCount == 0) {
             Toast.makeText(this, R.string.restore_failed, Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(this, getString(R.string.restore_done, n), Toast.LENGTH_SHORT).show()
-            recreate() // rebuild every control from the restored values
+            return@registerForActivityResult
         }
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.g_restore)
+            .setMessage(getString(R.string.restore_confirm_msg, summary.validSettingsCount, summary.appRulesCount, summary.appVersion))
+            .setPositiveButton(R.string.ok) { _, _ ->
+                val n = SettingsBackup.restoreFromJson(prefs.sp, text)
+                if (n < 0) {
+                    Toast.makeText(this, R.string.restore_failed, Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, getString(R.string.restore_done, n), Toast.LENGTH_SHORT).show()
+                    recreate()
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 
     /** Settings: app theme and haptics, then everything else as a grid of tiles side by side. */
@@ -780,6 +850,7 @@ class MainActivity : AppCompatActivity() {
             GridItem(R.drawable.ic_s_restore, getString(R.string.g_restore), getString(R.string.g_restore_sub), RowIcons.BROWN) {
                 restoreLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
             },
+            GridItem(R.drawable.ic_s_shield, getString(R.string.g_diag), getString(R.string.g_diag_sub), RowIcons.RED) { showDiagnostics() },
             GridItem(R.drawable.ic_s_log, getString(R.string.g_log), getString(R.string.g_log_sub), RowIcons.GREY) { showLog() },
         )).getOrNull(0)
         col.addView(hint(getString(R.string.reach_tip)))
@@ -817,6 +888,89 @@ class MainActivity : AppCompatActivity() {
         textSize = 13f
         setTextColor(getColor(R.color.text_secondary))
         setPadding(dp(16), dp(14), dp(16), dp(6))
+    }
+
+    private fun showDiagnostics() {
+        val items = com.glowled.app.util.HealthCheck.runAll(this)
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(10), dp(20), dp(10))
+        }
+
+        val aod = com.glowled.app.core.BatteryStats.getAodTelemetry(this)
+        val statsHeader = TextView(this).apply {
+            text = getString(R.string.diag_telemetry, aod.sessionCount, aod.animDurationMs / 1000, aod.staticDurationMs / 1000)
+            textSize = 12f
+            setTextColor(getColor(R.color.text_secondary))
+            setPadding(0, 0, 0, dp(12))
+        }
+        container.addView(statsHeader)
+
+        var dialog: androidx.appcompat.app.AlertDialog? = null
+
+        items.forEach { item ->
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(0, dp(8), 0, dp(8))
+            }
+            val statusIcon = ImageView(this).apply {
+                setImageResource(if (item.isOk) R.drawable.ic_s_badge else R.drawable.ic_s_shield)
+                imageTintList = ColorStateList.valueOf(if (item.isOk) RowIcons.GREEN else RowIcons.ORANGE)
+                layoutParams = LinearLayout.LayoutParams(dp(22), dp(22)).apply { rightMargin = dp(12) }
+            }
+            val textCol = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            }
+            val titleView = TextView(this).apply {
+                text = item.title
+                textSize = 14f
+                setTypeface(null, Typeface.BOLD)
+                setTextColor(getColor(R.color.text_primary))
+            }
+            val detailView = TextView(this).apply {
+                text = item.detail
+                textSize = 12f
+                setTextColor(getColor(R.color.text_secondary))
+            }
+            textCol.addView(titleView)
+            textCol.addView(detailView)
+            row.addView(statusIcon)
+            row.addView(textCol)
+
+            if (!item.isOk && item.fixAction != null) {
+                val fixBtn = TextView(this).apply {
+                    setText(R.string.setup_open)
+                    textSize = 12f
+                    setTypeface(null, Typeface.BOLD)
+                    setTextColor(getColor(R.color.accent))
+                    setPadding(dp(8), dp(4), dp(4), dp(4))
+                    setOnClickListener {
+                        item.fixAction.invoke(this@MainActivity)
+                        dialog?.dismiss()
+                    }
+                }
+                row.addView(fixBtn)
+            }
+            container.addView(row)
+        }
+
+        dialog = MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.g_diag)
+            .setView(ScrollView(this).apply { addView(container) })
+            .setPositiveButton(R.string.diag_export) { _, _ ->
+                val report = com.glowled.app.util.HealthCheck.generateReport(this)
+                val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, report)
+                open(Intent.createChooser(send, getString(R.string.g_diag)))
+            }
+            .setNeutralButton(R.string.log_copy) { _, _ ->
+                val report = com.glowled.app.util.HealthCheck.generateReport(this)
+                getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("Glow LED Diagnostics", report))
+                Toast.makeText(this, R.string.log_copied, Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton(R.string.close, null)
+            .show()
     }
 
     private fun showLog() {

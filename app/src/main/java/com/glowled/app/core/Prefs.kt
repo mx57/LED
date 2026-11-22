@@ -10,6 +10,39 @@ class Prefs(context: Context) {
         it.getSharedPreferences("${it.packageName}_preferences", Context.MODE_PRIVATE)
     }
 
+    /** Device-specific / runtime state excluded from Android Auto Backup. */
+    val deviceSp: SharedPreferences = context.applicationContext.let {
+        it.getSharedPreferences("device_state", Context.MODE_PRIVATE)
+    }
+
+    init {
+        migrateDeviceState()
+    }
+
+    private fun migrateDeviceState() {
+        val keys = listOf(
+            "aod_window_blocked", K_TRANSFER_APPS,
+            "update_latest", "update_notes", "update_checked", "update_notified",
+        )
+        val toMigrate = keys.filter { sp.contains(it) }
+        if (toMigrate.isNotEmpty()) {
+            val oldEdit = sp.edit()
+            val newEdit = deviceSp.edit()
+            for (k in toMigrate) {
+                when (val v = sp.all[k]) {
+                    is Boolean -> newEdit.putBoolean(k, v)
+                    is Int -> newEdit.putInt(k, v)
+                    is Long -> newEdit.putLong(k, v)
+                    is Float -> newEdit.putFloat(k, v)
+                    is String -> newEdit.putString(k, v)
+                }
+                oldEdit.remove(k)
+            }
+            newEdit.apply()
+            oldEdit.apply()
+        }
+    }
+
     private fun int(key: String, def: Int) = sp.getInt(key, def)
     private fun bool(key: String, def: Boolean) = sp.getBoolean(key, def)
     private fun str(key: String, def: String) = sp.getString(key, def) ?: def
@@ -128,6 +161,14 @@ class Prefs(context: Context) {
     val chargeShowCurrent get() = bool("charge_show_current", true)
     val chargeShowPower get() = bool("charge_show_power", true)
 
+    // CPU load indicator (screen on)
+    val cpuIndicator get() = bool("cpu_indicator", false)
+    val cpuPos get() = sp.getString("cpu_pos", "below") ?: "below"
+    val cpuOffsetXDp get() = int("cpu_offset_x", 0).coerceIn(-150, 150)
+    val cpuOffsetYDp get() = int("cpu_offset_y", 0).coerceIn(-150, 150)
+    val cpuFontSizeSp get() = int("cpu_font_size", 12).coerceIn(8, 24)
+    val cpuShowLabel get() = bool("cpu_show_label", true)
+
     val chargeColorLow get() = int("charge_color_low", 0xFFFF1744.toInt())
     val chargeColorMid get() = int("charge_color_mid", 0xFFFFC400.toInt())
     val chargeColorHigh get() = int("charge_color_high", 0xFF00E676.toInt())
@@ -145,8 +186,28 @@ class Prefs(context: Context) {
     // Filters
     val appMode get() = str("app_mode", "all")
     val ignoreLowImportance get() = bool("ignore_low", true)
+    val ignoreSilentNotifications get() = ignoreLowImportance
     val respectDnd get() = bool("respect_dnd", true)
     val clearOnUnlock get() = bool("clear_on_unlock", false)
+
+    // Snooze / temporary pause
+    var pausedUntilEpochMs: Long
+        get() = sp.getLong("paused_until", 0L)
+        set(v) = sp.edit().putLong("paused_until", v).apply()
+
+    val isPaused: Boolean
+        get() {
+            val until = pausedUntilEpochMs
+            return until > 0 && System.currentTimeMillis() < until
+        }
+
+    fun snooze(minutes: Int) {
+        pausedUntilEpochMs = System.currentTimeMillis() + minutes * 60_000L
+    }
+
+    fun clearSnooze() {
+        pausedUntilEpochMs = 0L
+    }
 
     // Power
     val minBattery get() = int("min_battery", 10)
@@ -180,6 +241,13 @@ class Prefs(context: Context) {
 
     fun setAppEnabled(pkg: String, on: Boolean) = sp.edit().putBoolean("app_en_$pkg", on).apply()
 
+    fun appPriority(pkg: String): Boolean = sp.getBoolean("app_prio_$pkg", false)
+
+    fun setAppPriority(pkg: String, priority: Boolean) {
+        if (!priority) sp.edit().remove("app_prio_$pkg").apply()
+        else sp.edit().putBoolean("app_prio_$pkg", true).apply()
+    }
+
     /** 0 means "automatic". */
     fun appColor(pkg: String): Int = sp.getInt("app_color_$pkg", 0)
 
@@ -204,12 +272,12 @@ class Prefs(context: Context) {
 
     /** Apps that have shown a progress bar, so the per-app arrow list can offer them (comma separated). */
     val transferApps: Set<String>
-        get() = str(K_TRANSFER_APPS, "").split(',').filter { it.isNotBlank() }.toSet()
+        get() = (deviceSp.getString(K_TRANSFER_APPS, "") ?: "").split(',').filter { it.isNotBlank() }.toSet()
 
     fun noteTransferApp(pkg: String) {
         val now = transferApps
         if (pkg in now) return
-        sp.edit().putString(K_TRANSFER_APPS, (now.toList() + pkg).takeLast(MAX_TRANSFER_APPS).joinToString(",")).apply()
+        deviceSp.edit().putString(K_TRANSFER_APPS, (now.toList() + pkg).takeLast(MAX_TRANSFER_APPS).joinToString(",")).apply()
     }
 
     companion object {

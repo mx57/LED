@@ -65,11 +65,13 @@ class AodActivity : Activity() {
 
             override fun releaseKeepScreenOn() {
                 window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                ContextCompat.registerReceiver(
-                    this@AodActivity, finishOnOff, IntentFilter(Intent.ACTION_SCREEN_OFF),
-                    ContextCompat.RECEIVER_NOT_EXPORTED,
-                )
-                waitingForOff = true
+                if (!waitingForOff) {
+                    ContextCompat.registerReceiver(
+                        this@AodActivity, finishOnOff, IntentFilter(Intent.ACTION_SCREEN_OFF),
+                        ContextCompat.RECEIVER_NOT_EXPORTED,
+                    )
+                    waitingForOff = true
+                }
             }
 
             // Show the PIN/fingerprint prompt, then open the chat once unlocked.

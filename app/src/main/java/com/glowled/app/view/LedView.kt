@@ -20,6 +20,7 @@ import com.glowled.app.core.LedStyle
 import com.glowled.app.core.MeterIcon
 import com.glowled.app.core.MultiMode
 import com.glowled.app.core.Prefs
+import com.glowled.app.view.renderer.*
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.max
@@ -39,7 +40,7 @@ import kotlin.math.sin
 class LedView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
-) : View(context, attrs) {
+) : View(context, attrs), LedRenderContext {
 
     private val density = resources.displayMetrics.density
 
@@ -47,7 +48,8 @@ class LedView @JvmOverloads constructor(
     var style = LedStyle.PULSE
         private set
     private var multiMode = MultiMode.CYCLE
-    private var colors = intArrayOf(Prefs.DEFAULT_COLOR)
+    private var _colors = intArrayOf(Prefs.DEFAULT_COLOR)
+    override val colors: IntArray get() = _colors
     private var geometry: Geometry? = null
     private var thickness = 3 * density
     private var gap = 2 * density
@@ -58,6 +60,20 @@ class LedView @JvmOverloads constructor(
     /** Slowly rotate a ring that is split into app colours. */
     private var rotateRing = true
     private var cornerRadius = 40 * density
+
+    private val styleRenderers: Map<LedStyle, LedStyleRenderer> = mapOf(
+        LedStyle.STATIC to StaticStyleRenderer(),
+        LedStyle.BREATHE to BreatheStyleRenderer(),
+        LedStyle.EDGE_PULSE to EdgePulseStyleRenderer(),
+        LedStyle.BLINK to BlinkStyleRenderer(),
+        LedStyle.HEARTBEAT to HeartbeatStyleRenderer(),
+        LedStyle.PULSE to PulseStyleRenderer(),
+        LedStyle.SPIN to SpinStyleRenderer(),
+        LedStyle.EDGE to EdgeStyleRenderer(),
+        LedStyle.RAINBOW to RainbowStyleRenderer(),
+        LedStyle.ORBIT to OrbitStyleRenderer(),
+        LedStyle.SPARKLE to SparkleStyleRenderer(),
+    )
 
     /**
      * When true (overlay / AOD) the geometry is in absolute screen pixels. When false (in-app
@@ -87,8 +103,8 @@ class LedView @JvmOverloads constructor(
     private var sweep: SweepGradient? = null
     private val loc = IntArray(2)
     private val screen = Point()
-    private var cx = 0f
-    private var cy = 0f
+    override var cx = 0f
+    override var cy = 0f
     private var startTime = SystemClock.uptimeMillis()
     private var dirty = true
 
@@ -122,7 +138,7 @@ class LedView @JvmOverloads constructor(
     }
 
     fun setColors(c: IntArray) {
-        colors = if (c.isEmpty()) intArrayOf(Prefs.DEFAULT_COLOR) else c
+        _colors = if (c.isEmpty()) intArrayOf(Prefs.DEFAULT_COLOR) else c
         invalidate()
     }
 
@@ -143,6 +159,15 @@ class LedView @JvmOverloads constructor(
     private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.CENTER
         textSize = 10 * resources.displayMetrics.scaledDensity
+        typeface = android.graphics.Typeface.DEFAULT_BOLD
+    }
+    private var cpuLabel: String? = null
+    private var cpuPos: String = "below"
+    private var cpuOffsetXPx: Float = 0f
+    private var cpuOffsetYPx: Float = 0f
+    private val cpuPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        textAlign = Paint.Align.CENTER
+        textSize = 12 * resources.displayMetrics.scaledDensity
         typeface = android.graphics.Typeface.DEFAULT_BOLD
     }
     private var meterColor = 0
@@ -180,13 +205,33 @@ class LedView @JvmOverloads constructor(
         setBatteryText(percent?.coerceIn(0, 100)?.let { "$it%" })
     }
 
+    fun setCpuLoad(text: String?, pos: String = "below", offsetXDp: Int = 0, offsetYDp: Int = 0, fontSizeSp: Int = 12) {
+        val targetSize = fontSizeSp * resources.displayMetrics.scaledDensity
+        val targetX = offsetXDp * density
+        val targetY = offsetYDp * density
+        if (cpuLabel == text && cpuPos == pos && cpuOffsetXPx == targetX && cpuOffsetYPx == targetY && cpuPaint.textSize == targetSize) return
+        cpuLabel = text
+        cpuPos = pos
+        cpuOffsetXPx = targetX
+        cpuOffsetYPx = targetY
+        cpuPaint.textSize = targetSize
+        dirty = true
+        invalidate()
+    }
+
     private val lineSpacing get() = max(14 * density, labelPaint.fontSpacing + 2 * density)
 
     /** Leave space for the battery stats without overlapping notification icons. */
     fun indicatorBottom(): Float {
-        val label = batteryLabel ?: return ringBottom()
-        val count = label.count { it == '\n' } + 1
-        return ringBottom() + count * lineSpacing + 2 * density
+        var bottom = ringBottom()
+        batteryLabel?.let { label ->
+            val count = label.count { it == '\n' } + 1
+            bottom += count * lineSpacing + 2 * density
+        }
+        if (cpuLabel != null && cpuPos == "below") {
+            bottom += max(14 * density, cpuPaint.fontSpacing + 2 * density) + max(0f, cpuOffsetYPx)
+        }
+        return bottom
     }
 
     private fun drawLabels(c: Canvas) {
@@ -200,6 +245,46 @@ class LedView @JvmOverloads constructor(
             c.drawText(line, cx, y, labelPaint)
             y += spacing
         }
+    }
+
+    private fun drawCpuLabel(c: Canvas) {
+        val text = cpuLabel ?: return
+        if (intro <= 0f || alphaMul <= 0f) return
+        cpuPaint.color = Color.WHITE
+        cpuPaint.alpha = (220 * alphaMul * intro).toInt().coerceIn(0, 255)
+        val r = ringRadius()
+        val glow = glowRadius()
+        val spacing = max(14 * density, cpuPaint.fontSpacing + 2 * density)
+
+        val tx: Float
+        val ty: Float
+        when (cpuPos) {
+            "right" -> {
+                cpuPaint.textAlign = Paint.Align.LEFT
+                tx = cx + r + glow + 6 * density + cpuOffsetXPx
+                ty = cy + (cpuPaint.textSize / 3f) + cpuOffsetYPx
+            }
+            "left" -> {
+                cpuPaint.textAlign = Paint.Align.RIGHT
+                tx = cx - r - glow - 6 * density + cpuOffsetXPx
+                ty = cy + (cpuPaint.textSize / 3f) + cpuOffsetYPx
+            }
+            "above" -> {
+                cpuPaint.textAlign = Paint.Align.CENTER
+                tx = cx + cpuOffsetXPx
+                ty = cy - r - glow - 6 * density - cpuPaint.descent() + cpuOffsetYPx
+            }
+            else -> { // "below"
+                cpuPaint.textAlign = Paint.Align.CENTER
+                tx = cx + cpuOffsetXPx
+                val base = if (batteryLabel != null) {
+                    val count = batteryLabel!!.count { it == '\n' } + 1
+                    ringBottom() + count * lineSpacing + 2 * density
+                } else ringBottom()
+                ty = base + spacing - cpuPaint.descent() + cpuOffsetYPx
+            }
+        }
+        c.drawText(text, tx, ty, cpuPaint)
     }
 
     private fun findTopFraction(): Float {
@@ -582,7 +667,7 @@ class LedView @JvmOverloads constructor(
         }
     }
 
-    private val isFilled get() = geometry?.shape == CutoutShape.DOT && !style.isEdge
+    override val isFilled get() = geometry?.shape == CutoutShape.DOT && !style.isEdge
 
     override fun onDraw(canvas: Canvas) {
         if (dirty) rebuild()
@@ -612,30 +697,14 @@ class LedView @JvmOverloads constructor(
             }
         }
 
-        if (meterFrac >= 0f) drawMeter(canvas, now) else if (notificationRingVisible) when (style) {
-            LedStyle.STATIC -> ring(canvas, color, 1f, segmented, rot)
-            LedStyle.BREATHE -> ring(canvas, color, 0.12f + 0.88f * wave(p), segmented, rot)
-            LedStyle.EDGE_PULSE -> ring(canvas, color, 0.1f + 0.9f * wave(p), segmented, rot)
-            LedStyle.BLINK -> if (p < BLINK_ON) ring(canvas, color, 1f, segmented, rot)
-            LedStyle.HEARTBEAT -> ring(canvas, color, 0.08f + 0.92f * heartbeat(p), segmented, rot)
-            LedStyle.PULSE -> {
-                ring(canvas, color, 0.55f + 0.45f * (1f - wave(p)), segmented, rot)
-                ripple(canvas, color, p)
-            }
-            LedStyle.SPIN -> spin(canvas, p, segmented, color, tail = 0.38f, comets = 1, base = 0.16f)
-            LedStyle.EDGE -> spin(canvas, p, segmented, color, tail = 0.16f, comets = 2, base = 0.06f)
-            LedStyle.RAINBOW -> rainbow(canvas, p)
-            LedStyle.ORBIT -> spin(canvas, p, segmented, color, tail = 0.22f, comets = 2, base = 0.08f)
-            LedStyle.SPARKLE -> {
-                for (i in 0 until 6) {
-                    val a = 0.12f + 0.88f * wave((p + i / 6f) % 1f).pow(4)
-                    val start = i / 6f + p * 0.1f
-                    segment(canvas, start, start + 0.075f, paintFor(colors[i % n], a, false))
-                }
-            }
+        if (meterFrac >= 0f) {
+            drawMeter(canvas, now)
+        } else if (notificationRingVisible) {
+            styleRenderers[style]?.render(canvas, p, color, segmented, rot, this)
         }
 
         drawLabels(canvas)
+        drawCpuLabel(canvas)
         if (transformed) canvas.restore()
         if (dropT >= 0f && !style.isEdge) {
             if (shiftX != 0f || shiftY != 0f) {
@@ -649,19 +718,7 @@ class LedView @JvmOverloads constructor(
 
     private fun Long.scaled() = max(1500L, (this * periodScale).toLong())
 
-    private fun basePeriod(): Long = when (style) {
-        LedStyle.STATIC -> 2500
-        LedStyle.BREATHE -> 3200
-        LedStyle.PULSE -> 2000
-        LedStyle.BLINK -> 2400
-        LedStyle.HEARTBEAT -> 1700
-        LedStyle.SPIN -> 1500
-        LedStyle.RAINBOW -> 3000
-        LedStyle.EDGE -> 3200
-        LedStyle.EDGE_PULSE -> 3000
-        LedStyle.ORBIT -> 2400
-        LedStyle.SPARKLE -> 3600
-    }
+    private fun basePeriod(): Long = styleRenderers[style]?.basePeriodMs ?: 2000L
 
     private fun scheduleNext(period: Long, inPeriod: Long, n: Int, segmented: Boolean) {
         if (!isShown || windowVisibility != VISIBLE) return
@@ -698,7 +755,7 @@ class LedView @JvmOverloads constructor(
         return paint
     }
 
-    private fun ring(c: Canvas, color: Int, a: Float, segmented: Boolean, rotation: Float) {
+    override fun ring(c: Canvas, color: Int, a: Float, segmented: Boolean, rotation: Float) {
         if (a <= 0.01f) return
         if (!segmented) {
             c.drawPath(shapePath, paintFor(color, a, isFilled))
@@ -722,7 +779,7 @@ class LedView @JvmOverloads constructor(
         }
     }
 
-    private fun ripple(c: Canvas, color: Int, p: Float) {
+    override fun ripple(c: Canvas, color: Int, p: Float) {
         val travel = thickness * 2f + 10 * density
         ripplePath.reset()
         buildShape(ripplePath, travel * p)
@@ -730,7 +787,7 @@ class LedView @JvmOverloads constructor(
         c.drawPath(ripplePath, paintFor(color, a, false))
     }
 
-    private fun spin(c: Canvas, p: Float, segmented: Boolean, color: Int, tail: Float, comets: Int, base: Float) {
+    override fun spin(c: Canvas, p: Float, segmented: Boolean, color: Int, tail: Float, comets: Int, base: Float) {
         val n = if (segmented) colors.size else comets
         if (base > 0f) {
             c.drawPath(shapePath, paintFor(colors[0], base, false).also { it.clearShadowLayer() })
@@ -750,7 +807,7 @@ class LedView @JvmOverloads constructor(
         }
     }
 
-    private fun rainbow(c: Canvas, p: Float) {
+    override fun rainbow(c: Canvas, p: Float) {
         val s = sweep ?: return
         shaderMatrix.setRotate(p * 360f, cx, cy)
         s.setLocalMatrix(shaderMatrix)
@@ -762,6 +819,10 @@ class LedView @JvmOverloads constructor(
         paint.shader = s
         c.drawPath(shapePath, paint)
         paint.shader = null
+    }
+
+    override fun drawSegment(c: Canvas, from: Float, to: Float, color: Int, a: Float) {
+        segment(c, from, to, paintFor(color, a, false))
     }
 
     /** Draws the part of the shape between path fractions [from]..[to] (wraps around). */
@@ -778,13 +839,6 @@ class LedView @JvmOverloads constructor(
             measure.getSegment(a * pathLength, b * pathLength, segPath, true)
         }
         c.drawPath(segPath, paint)
-    }
-
-    private fun wave(p: Float) = (0.5f - 0.5f * cos(2f * PI.toFloat() * p))
-
-    private fun heartbeat(p: Float): Float {
-        fun bump(s: Float, e: Float) = if (p in s..e) sin(PI.toFloat() * (p - s) / (e - s)) else 0f
-        return max(bump(0f, 0.14f), bump(0.22f, 0.38f) * 0.8f)
     }
 
     override fun onVisibilityChanged(changedView: View, visibility: Int) {

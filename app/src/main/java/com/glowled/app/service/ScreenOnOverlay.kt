@@ -247,6 +247,13 @@ object ScreenOnOverlay {
         val m = LedController.overlayMeter
         ledView.setMeter(m?.fraction, m?.color ?: 0, m?.icon ?: MeterIcon.NONE, m?.indeterminate ?: false)
         ledView.setBatteryText(LedController.batteryStatusText())
+        ledView.setCpuLoad(
+            LedController.cpuStatusText(),
+            prefs.cpuPos,
+            prefs.cpuOffsetXDp,
+            prefs.cpuOffsetYDp,
+            prefs.cpuFontSizeSp,
+        )
 
         val flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
@@ -267,9 +274,33 @@ object ScreenOnOverlay {
             val expandedW = maxOf(ringW, peekW + (24 * d).toInt(), (220 * d).toInt())
             if (state == State.COLLAPSED) {
                 val tz = tapZoneRect(ctx)
-                p = WindowManager.LayoutParams(tz.width(), tz.height(), type, flags, PixelFormat.TRANSLUCENT)
+                val extraLeft = if (prefs.cpuIndicator) {
+                    var ex = if (prefs.cpuPos == "left") (90 * d).toInt() else (40 * d).toInt()
+                    if (prefs.cpuOffsetXDp < 0) ex += (-prefs.cpuOffsetXDp * d).toInt()
+                    ex
+                } else 0
+                val extraRight = if (prefs.cpuIndicator) {
+                    var ex = if (prefs.cpuPos == "right") (90 * d).toInt() else (40 * d).toInt()
+                    if (prefs.cpuOffsetXDp > 0) ex += (prefs.cpuOffsetXDp * d).toInt()
+                    ex
+                } else 0
+                val extraTop = if (prefs.cpuIndicator) {
+                    var ey = if (prefs.cpuPos == "above") (45 * d).toInt() else (10 * d).toInt()
+                    if (prefs.cpuOffsetYDp < 0) ey += (-prefs.cpuOffsetYDp * d).toInt()
+                    ey
+                } else 0
+                val extraBottom = if (prefs.cpuIndicator) {
+                    var ey = if (prefs.cpuPos == "below") (45 * d).toInt() else (10 * d).toInt()
+                    if (prefs.cpuOffsetYDp > 0) ey += (prefs.cpuOffsetYDp * d).toInt()
+                    ey
+                } else 0
+
+                val w = tz.width() + extraLeft + extraRight
+                val h = tz.height() + extraTop + extraBottom
+                p = WindowManager.LayoutParams(w, h, type, flags, PixelFormat.TRANSLUCENT)
                 p.gravity = Gravity.TOP or Gravity.START
-                p.x = tz.left; p.y = tz.top
+                p.x = (tz.left - extraLeft).coerceAtLeast(0)
+                p.y = (tz.top - extraTop).coerceAtLeast(0)
             } else {
                 val w = expandedW
                 val x = (g.cx - w / 2f).toInt()
@@ -305,6 +336,13 @@ object ScreenOnOverlay {
         val m = LedController.overlayMeter
         ledView.setMeter(m?.fraction, m?.color ?: 0, m?.icon ?: MeterIcon.NONE, m?.indeterminate ?: false)
         ledView.setBatteryText(LedController.batteryStatusText())
+        ledView.setCpuLoad(
+            LedController.cpuStatusText(),
+            prefs.cpuPos,
+            prefs.cpuOffsetXDp,
+            prefs.cpuOffsetYDp,
+            prefs.cpuFontSizeSp,
+        )
         ledView.dropletRadiusDp = prefs.dropletSizeDp.toFloat()
         info?.monochrome = prefs.aodIcons
         info?.iconDp = prefs.appIconDp
@@ -571,5 +609,16 @@ object ScreenOnOverlay {
 
     fun updateBatteryText() {
         led?.setBatteryText(LedController.batteryStatusText())
+    }
+
+    fun updateCpuText() {
+        val prefs = LedController.prefs
+        led?.setCpuLoad(
+            LedController.cpuStatusText(),
+            prefs.cpuPos,
+            prefs.cpuOffsetXDp,
+            prefs.cpuOffsetYDp,
+            prefs.cpuFontSizeSp,
+        )
     }
 }

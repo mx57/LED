@@ -43,8 +43,23 @@ object PowerGuard {
             mode == AudioManager.MODE_RINGTONE
     }
 
+    fun isSnoozed(pausedUntilMs: Long, nowMs: Long = System.currentTimeMillis()): Boolean {
+        if (pausedUntilMs <= 0L) return false
+        return nowMs < pausedUntilMs
+    }
+
+    fun isSnoozed(prefs: Prefs, nowMs: Long = System.currentTimeMillis()): Boolean {
+        val until = prefs.pausedUntilEpochMs
+        if (!isSnoozed(until, nowMs)) {
+            if (until > 0L) prefs.clearSnooze()
+            return false
+        }
+        return true
+    }
+
     /** Returns null if allowed, otherwise a short reason (shown on the dashboard). */
-    fun blockReason(context: Context, prefs: Prefs): String? = when {
+    fun blockReason(context: Context, prefs: Prefs, nowMs: Long = System.currentTimeMillis()): String? = when {
+        isSnoozed(prefs, nowMs) -> context.getString(com.glowled.app.R.string.block_snoozed)
         inQuietHours(prefs) -> context.getString(com.glowled.app.R.string.block_quiet)
         !isCharging(context) && batteryLevel(context) < prefs.minBattery -> context.getString(com.glowled.app.R.string.block_battery)
         inCall(context) -> context.getString(com.glowled.app.R.string.block_call)

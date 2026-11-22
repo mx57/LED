@@ -76,4 +76,10 @@
         <item>10 sn</item>
         <item>30 sn</item>
     </string-array>
+    <string-array name="cpu_pos_labels">
+        <item>Altında</item>
+        <item>Sağda</item>
+        <item>Solda</item>
+        <item>Üzerinde</item>
+    </string-array>
 </resources>

@@ -5,6 +5,20 @@
 - **Configurable dimensions & text size:** customize message plate width, max height, preview line length, and font size directly from Screen Off and Screen On settings.
 - **Screen-on overlay parity:** full expandable notification support, timeout reset on touch, and mark-all-read batch action on the unlocked screen.
 
+## Independent charging ring settings & battery metrics
+- **Separate timers & controls:** independently configure charging ring display on active screen and always-on display (AOD).
+- **Live battery metrics:** optional real-time display of battery percentage, voltage (V), current (mA), and charging power (W) with individual toggles.
+
+## Live CPU load indicator
+- **Continuous CPU monitoring:** optional real-time CPU usage near or below the camera cutout with customizable position (above, below, left, right), offset, and font size.
+
+## Maintenance & stability
+- **Fork updater support:** in-app updater now targets `mx57/LED` repository releases with guaranteed connection closing and package signing certificate verification.
+- **Device state isolation:** device-specific and cached states separated into `device_state.xml` and excluded from Android Auto Backup.
+- **Thread-safe controller initialization:** atomic guard and main-thread listener notifications prevent race conditions on cold start.
+- **Complete translations:** the 32 keys that shipped only in English and Russian are now translated into the other 11 languages; MissingTranslation stays enabled, so an untranslated key fails the build.
+- **Real release signing:** CI now signs releases with this fork's own key - no more silently debug-signed "release" APKs - and the updater pins that certificate, refusing upstream-signed builds.
+
 ---
 
 # Glow LED v2.11.0

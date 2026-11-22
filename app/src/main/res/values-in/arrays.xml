@@ -76,4 +76,10 @@
         <item>10 dtk</item>
         <item>30 dtk</item>
     </string-array>
+    <string-array name="cpu_pos_labels">
+        <item>Di bawah</item>
+        <item>Kanan</item>
+        <item>Kiri</item>
+        <item>Di atas</item>
+    </string-array>
 </resources>

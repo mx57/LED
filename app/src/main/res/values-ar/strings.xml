@@ -374,4 +374,23 @@
     <string name="t_charge_show_voltage">جهد البطارية (V)</string>
     <string name="t_charge_show_current">التيار (mA)</string>
     <string name="t_charge_show_power">قدرة الشحن (W)</string>
+    <string name="sec_cpu">تحميل المعالج</string>
+    <string name="t_cpu_indicator">إظهار تحميل المعالج</string>
+    <string name="t_cpu_show_label">إظهار بادئة \"CPU\"</string>
+    <string name="chips_cpu_pos">الموضع بالنسبة للحلقة</string>
+    <string name="s_cpu_font_size">حجم نص المعالج</string>
+    <string name="s_cpu_offset_x">الإزاحة X</string>
+    <string name="s_cpu_offset_y">الإزاحة Y</string>
+    <string name="g_diag">التشخيص</string>
+    <string name="g_diag_sub">حالة النظام والصحة</string>
+    <string name="diag_export">تصدير التقرير</string>
+    <string name="diag_telemetry">AOD (24 ساعة): %1$d استيقاظًا · %2$d ث متحرك · %3$d ث ثابت</string>
+    <string name="restore_confirm_msg">تم العثور على %1$d إعدادات (بما فيها %2$d من قواعد التطبيقات) من الإصدار %3$s.
+
+هل تريد استبدال الإعدادات الحالية؟</string>
+    <string name="sec_snooze">إيقاف مؤقت</string>
+    <string name="snooze_title">إيقاف LED مؤقتًا (Snooze)</string>
+    <string name="snooze_off">إيقاف</string>
+    <string name="tile_snooze_sub">متوقف مؤقتًا · %d د</string>
+    <string name="block_snoozed">متوقف مؤقتًا بواسطة المستخدم</string>
 </resources>

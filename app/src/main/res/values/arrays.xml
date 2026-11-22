@@ -89,4 +89,10 @@
         <item>10 s</item>
         <item>30 s</item>
     </string-array>
+    <string-array name="cpu_pos_labels">
+        <item>Below</item>
+        <item>Right</item>
+        <item>Left</item>
+        <item>Above</item>
+    </string-array>
 </resources>

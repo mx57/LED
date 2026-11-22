@@ -76,4 +76,10 @@
         <item>10 ث</item>
         <item>30 ث</item>
     </string-array>
+    <string-array name="cpu_pos_labels">
+        <item>أسفل</item>
+        <item>يمين</item>
+        <item>يسار</item>
+        <item>أعلى</item>
+    </string-array>
 </resources>

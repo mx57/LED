@@ -59,7 +59,7 @@ object OverlayHost {
             return
         }
         val manager = ctx.getSystemService(WindowManager::class.java)
-        val v = LedView(ctx)
+        val v = LedView(ctx).apply { intro = 1f }
         val params = buildParams(ctx, v, type)
         try {
             manager.addView(v, params)
@@ -82,6 +82,13 @@ object OverlayHost {
         val m = LedController.overlayMeter
         v.setMeter(m?.fraction, m?.color ?: 0, m?.icon ?: MeterIcon.NONE, m?.indeterminate ?: false)
         v.setBatteryText(LedController.batteryStatusText())
+        v.setCpuLoad(
+            LedController.cpuStatusText(),
+            prefs.cpuPos,
+            prefs.cpuOffsetXDp,
+            prefs.cpuOffsetYDp,
+            prefs.cpuFontSizeSp,
+        )
         v.dropletRadiusDp = prefs.dropletSizeDp.toFloat()
         val flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
             WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
@@ -97,13 +104,35 @@ object OverlayHost {
             p.gravity = Gravity.TOP or Gravity.START
         } else {
             val e = v.extentPx(g)
-            // Extra room below the ring for the droplet that drips out on a new notification.
-            val dropRoom = (DROP_DP * ctx.resources.displayMetrics.density).toInt() * 2
-            val width = maxOf(e * 2, (80 * ctx.resources.displayMetrics.density).toInt())
-            p = WindowManager.LayoutParams(width, e * 2 + dropRoom, type, flags, PixelFormat.TRANSLUCENT)
+            val d = ctx.resources.displayMetrics.density
+            val dropRoom = (DROP_DP * d).toInt() * 2
+            val extraLeft = if (prefs.cpuIndicator) {
+                var ex = if (prefs.cpuPos == "left") (90 * d).toInt() else (40 * d).toInt()
+                if (prefs.cpuOffsetXDp < 0) ex += (-prefs.cpuOffsetXDp * d).toInt()
+                ex
+            } else 0
+            val extraRight = if (prefs.cpuIndicator) {
+                var ex = if (prefs.cpuPos == "right") (90 * d).toInt() else (40 * d).toInt()
+                if (prefs.cpuOffsetXDp > 0) ex += (prefs.cpuOffsetXDp * d).toInt()
+                ex
+            } else 0
+            val extraTop = if (prefs.cpuIndicator) {
+                var ey = if (prefs.cpuPos == "above") (45 * d).toInt() else (10 * d).toInt()
+                if (prefs.cpuOffsetYDp < 0) ey += (-prefs.cpuOffsetYDp * d).toInt()
+                ey
+            } else 0
+            val extraBottom = if (prefs.cpuIndicator) {
+                var ey = if (prefs.cpuPos == "below") (45 * d).toInt() else (10 * d).toInt()
+                if (prefs.cpuOffsetYDp > 0) ey += (prefs.cpuOffsetYDp * d).toInt()
+                ey
+            } else 0
+
+            val width = maxOf(e * 2 + extraLeft + extraRight, (80 * d).toInt())
+            val height = e * 2 + dropRoom + extraTop + extraBottom
+            p = WindowManager.LayoutParams(width, height, type, flags, PixelFormat.TRANSLUCENT)
             p.gravity = Gravity.TOP or Gravity.START
-            p.x = (g.cx - p.width / 2f).toInt()
-            p.y = (g.cy - e).toInt()
+            p.x = (g.cx - e - extraLeft).toInt()
+            p.y = (g.cy - e - extraTop).toInt().coerceAtLeast(0)
         }
         p.layoutInDisplayCutoutMode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
@@ -181,5 +210,17 @@ object OverlayHost {
     fun updateBatteryText() {
         view?.setBatteryText(LedController.batteryStatusText())
         ScreenOnOverlay.updateBatteryText()
+    }
+
+    fun updateCpuText() {
+        val prefs = LedController.prefs
+        view?.setCpuLoad(
+            LedController.cpuStatusText(),
+            prefs.cpuPos,
+            prefs.cpuOffsetXDp,
+            prefs.cpuOffsetYDp,
+            prefs.cpuFontSizeSp,
+        )
+        ScreenOnOverlay.updateCpuText()
     }
 }

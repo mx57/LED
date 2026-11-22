@@ -76,4 +76,10 @@
         <item>10 सेकंड</item>
         <item>30 सेकंड</item>
     </string-array>
+    <string-array name="cpu_pos_labels">
+        <item>नीचे</item>
+        <item>दाएँ</item>
+        <item>बाएँ</item>
+        <item>ऊपर</item>
+    </string-array>
 </resources>
