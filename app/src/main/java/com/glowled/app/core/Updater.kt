@@ -28,13 +28,12 @@ object Updater {
     const val ACTION_INSTALL_STATUS = "com.glowled.app.UPDATE_INSTALL_STATUS"
     /**
      * SHA-256 of the certificate this fork signs its releases with; updates must carry it.
-     * Fill it in from your first signed release before shipping it:
-     *   apksigner verify --print-certs app-release.apk   ->  "certificate SHA-256 digest"
-     * While it is empty [verify] refuses to install anything (fail-closed; the reason lands in
-     * the event log). Never put the upstream key back here: with the matching applicationId it
-     * would let an upstream build silently replace this fork and all of its changes.
+     * This is the key the mx57/LED GitHub Actions release workflow signs with (the
+     * GLOWLED_KEYSTORE_* repository secrets), so the in-app updater accepts this fork's own
+     * builds. Never put the upstream key back here: with the matching applicationId it would
+     * let an upstream build silently replace this fork and all of its changes.
      */
-    private const val RELEASE_SHA256 = ""
+    private const val RELEASE_SHA256 = "c5b891b739a0dac9c58b6307f764172713866dca344d9d78a6e29a8a0011f4c5"
 
     // Last result, kept in prefs so the Settings row and the notification can show it.
     const val K_LATEST = "update_latest"
