@@ -17,17 +17,24 @@ import java.security.MessageDigest
 
 /**
  * The in-app updater: asks GitHub for the latest release, downloads its APK, checks it is a newer
- * Glow LED signed with the official release key, and hands it to the system installer.
+ * Glow LED signed with this fork's release key, and hands it to the system installer.
  * Checking for updates is the only thing Glow LED uses the internet for.
  */
 object Updater {
 
-    private const val API = "https://api.github.com/repos/ankitchanki/LED/releases/latest"
-    const val RELEASES_PAGE = "https://github.com/ankitchanki/LED/releases"
+    private const val API = "https://api.github.com/repos/mx57/LED/releases/latest"
+    const val RELEASES_PAGE = "https://github.com/mx57/LED/releases"
     private const val APK_NAME = "GlowLED-latest.apk"
     const val ACTION_INSTALL_STATUS = "com.glowled.app.UPDATE_INSTALL_STATUS"
-    /** SHA-256 of the Glow LED release signing certificate; updates must carry it. */
-    private const val RELEASE_SHA256 = "5d04de1a96a80107ec87658382b063f15c53cfea8043f554a339f285fe0c5023"
+    /**
+     * SHA-256 of the certificate this fork signs its releases with; updates must carry it.
+     * Fill it in from your first signed release before shipping it:
+     *   apksigner verify --print-certs app-release.apk   ->  "certificate SHA-256 digest"
+     * While it is empty [verify] refuses to install anything (fail-closed; the reason lands in
+     * the event log). Never put the upstream key back here: with the matching applicationId it
+     * would let an upstream build silently replace this fork and all of its changes.
+     */
+    private const val RELEASE_SHA256 = ""
 
     // Last result, kept in prefs so the Settings row and the notification can show it.
     const val K_LATEST = "update_latest"
@@ -154,10 +161,14 @@ object Updater {
     }
 
     /**
-     * True when [apk] is Glow LED, newer than this install and signed with the official release
+     * True when [apk] is Glow LED, newer than this install and signed with this fork's release
      * key. Android refuses a different key anyway; this stops anything else before the prompt.
      */
     fun verify(context: Context, apk: File): Boolean {
+        if (RELEASE_SHA256.isEmpty()) {
+            DebugLog.add("Updates disabled: RELEASE_SHA256 in Updater.kt is not set to this fork's signing certificate yet")
+            return false
+        }
         val pm = context.packageManager
         @Suppress("DEPRECATION")
         val flags = PackageManager.GET_SIGNING_CERTIFICATES or PackageManager.GET_SIGNATURES
