@@ -120,8 +120,16 @@ class MainActivity : AppCompatActivity() {
     private fun dp(v: Int) = (v * density).toInt()
     private val storeListener: () -> Unit = { runOnUiThread { refreshLive() } }
 
-    // Any setting change re-renders the preview immediately.
+    // Any setting change re-renders the preview immediately. SharedPreferences listeners fire on
+    // the thread that wrote the change - and UpdateCheckJob writes prefs from a background thread
+    // while this body touches views - so hop to the UI thread first (the debounce that merges
+    // slider ticks lives in LedController; see P1-12 for doing the same here).
     private val prefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        runOnUiThread { if (!isDestroyed) applyPrefChange(key) }
+    }
+
+    /** View work for one changed pref key; always called on the UI thread. */
+    private fun applyPrefChange(key: String?) {
         if (key == "style") styleAdapter.notifyItemRangeChanged(0, styleAdapter.itemCount)
         // A new method choice gets a fresh chance to use the flicker-free lock-screen window.
         if (key == "aod_method") prefs.sp.edit().remove(LedController.PREF_WINDOW_BLOCKED).apply()
