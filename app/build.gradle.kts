@@ -53,6 +53,15 @@ android {
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             val releaseSign = signingConfigs.getByName("release")
+            // The guard only fires when the invocation actually wants release OUTPUT
+            // (assembleRelease / bundle / build). Lint and unit tests also configure the
+            // release build type, and must stay runnable before the signing env exists -
+            // on a push event CI runs them before the keystore step decodes the secret.
+            val wantsReleaseOutput = gradle.startParameter.taskNames.any { name ->
+                val t = name.substringAfterLast(':')
+                t.equals("build", true) || t.equals("assemble", true) || t.equals("bundle", true) ||
+                    t.contains("Release", true) || t.contains("Bundle", true)
+            }
             when {
                 releaseSign.storeFile != null -> signingConfig = releaseSign
                 // Pull requests from other forks see no signing secrets: build a clearly marked
@@ -63,14 +72,17 @@ android {
                     versionNameSuffix = "-test"
                     logger.warn("Glow LED: no release keystore on CI - building a TEST APK signed with the debug key; never publish it.")
                 }
-                // Everywhere else a release build without the release keystore fails loudly:
-                // a debug-signed 'release' breaks in-app updates (the updater pins the release
-                // certificate) and looks like a trustworthy build while it is not.
-                else -> throw GradleException(
+                // A release artifact without the release keystore fails loudly: a debug-signed
+                // 'release' breaks in-app updates (the updater pins the release certificate)
+                // and looks like a trustworthy build while it is not.
+                wantsReleaseOutput -> throw GradleException(
                     "Glow LED: no release keystore found (keystore.properties locally, or the " +
                         "GLOWLED_KEYSTORE env variables on CI). Refusing to build a release APK signed " +
                         "with the debug key. Configure release signing first, or build assembleDebug instead.",
                 )
+                // Lint/test only configure the release type; no release-signed output is
+                // produced, so let them run with the dormant debug signing config.
+                else -> signingConfig = signingConfigs.getByName("debug")
             }
         }
         debug {
