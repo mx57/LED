@@ -342,4 +342,36 @@
     <string name="sc_download_sub">下载时光环逐渐填满，并带 ↓ 箭头。</string>
     <string name="sc_upload">上传中</string>
     <string name="sc_upload_sub">上传时光环逐渐填满，并带 ↑ 箭头。</string>
+    <string name="t_peek_expandable">可展开的消息</string>
+    <string name="peek_expand">展开（%d）</string>
+    <string name="peek_expand_single">展开</string>
+    <string name="peek_collapse">收起</string>
+    <string name="peek_mark_all_read">全部标为已读</string>
+    <string name="peek_messages_count">%1$s · %2$d 条消息</string>
+    <string name="reply_recent_context">最近消息</string>
+    <string name="quick_reply_ok">好的</string>
+    <string name="quick_reply_thanks">谢谢！</string>
+    <string name="quick_reply_on_my_way">马上到</string>
+    <string name="quick_reply_later">稍后</string>
+    <string name="t_overlay_tap_messages">点按圆环以阅读消息</string>
+    <string name="s_droplet_size">水滴大小</string>
+    <string name="s_icon_size">应用图标大小</string>
+    <string name="sec_tap_zone">点按响应区域</string>
+    <string name="s_tap_zone_x">点按区域 X 偏移</string>
+    <string name="s_tap_zone_y">点按区域 Y 偏移</string>
+    <string name="s_tap_zone_w">点按区域宽度（0 = 自动）</string>
+    <string name="s_tap_zone_h">点按区域高度（0 = 自动）</string>
+    <string name="tap_zone_hint">如果点按不到圆环，请在此调整。配置时会以边框显示点按区域。</string>
+    <string name="s_peek_width">消息卡片宽度</string>
+    <string name="s_peek_height">消息卡片最大高度</string>
+    <string name="s_peek_lines">消息预览行数</string>
+    <string name="s_peek_font_size">消息字体大小</string>
+    <string name="t_charge_screen_on">屏幕点亮时的充电圆环</string>
+    <string name="chips_charge_timeout_aod">充电计时器（息屏时）</string>
+    <string name="chips_charge_timeout_on">充电计时器（亮屏时）</string>
+    <string name="sec_battery_metrics">圆环下方的电池统计</string>
+    <string name="t_charge_show_percent">电池百分比（%）</string>
+    <string name="t_charge_show_voltage">电池电压（V）</string>
+    <string name="t_charge_show_current">当前电流（mA）</string>
+    <string name="t_charge_show_power">充电功率（W）</string>
 </resources>

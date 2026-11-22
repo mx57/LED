@@ -342,4 +342,36 @@
     <string name="sc_download_sub">İndirme halkayı ↓ okuyla doldurur.</string>
     <string name="sc_upload">Yükleniyor</string>
     <string name="sc_upload_sub">Yükleme halkayı ↑ okuyla doldurur.</string>
+    <string name="t_peek_expandable">Genişletilebilir mesajlar</string>
+    <string name="peek_expand">Genişlet (%d)</string>
+    <string name="peek_expand_single">Genişlet</string>
+    <string name="peek_collapse">Daralt</string>
+    <string name="peek_mark_all_read">Tümünü okundu işaretle</string>
+    <string name="peek_messages_count">%1$s · %2$d mesaj</string>
+    <string name="reply_recent_context">Son mesajlar</string>
+    <string name="quick_reply_ok">Tamam</string>
+    <string name="quick_reply_thanks">Teşekkürler!</string>
+    <string name="quick_reply_on_my_way">Yoldayım</string>
+    <string name="quick_reply_later">Sonra</string>
+    <string name="t_overlay_tap_messages">Mesajları okumak için halkaya dokunun</string>
+    <string name="s_droplet_size">Damla boyutu</string>
+    <string name="s_icon_size">Uygulama simge boyutu</string>
+    <string name="sec_tap_zone">Dokunma yanıt bölgesi</string>
+    <string name="s_tap_zone_x">Dokunma bölgesi X ofseti</string>
+    <string name="s_tap_zone_y">Dokunma bölgesi Y ofseti</string>
+    <string name="s_tap_zone_w">Dokunma bölgesi genişliği (0 = otomatik)</string>
+    <string name="s_tap_zone_h">Dokunma bölgesi yüksekliği (0 = otomatik)</string>
+    <string name="tap_zone_hint">Dokunuşlar halkaya ulaşmıyorsa ayarlayın. Burada yapılandırırken bir kenar dokunma bölgesini gösterir.</string>
+    <string name="s_peek_width">Mesaj kartı genişliği</string>
+    <string name="s_peek_height">Mesaj kartı azami yüksekliği</string>
+    <string name="s_peek_lines">Mesaj önizleme satırları</string>
+    <string name="s_peek_font_size">Mesaj yazı boyutu</string>
+    <string name="t_charge_screen_on">Ekran açıkken şarj halkası</string>
+    <string name="chips_charge_timeout_aod">Şarj zamanlayıcısı (ekran kapalı)</string>
+    <string name="chips_charge_timeout_on">Şarj zamanlayıcısı (ekran açık)</string>
+    <string name="sec_battery_metrics">Halka altında pil istatistikleri</string>
+    <string name="t_charge_show_percent">Pil yüzdesi (%)</string>
+    <string name="t_charge_show_voltage">Pil voltajı (V)</string>
+    <string name="t_charge_show_current">Güncel amper (mA)</string>
+    <string name="t_charge_show_power">Şarj gücü (W)</string>
 </resources>

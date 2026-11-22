@@ -342,4 +342,36 @@
     <string name="sc_download_sub">Un download riempie l\'anello, con una freccia ↓.</string>
     <string name="sc_upload">Caricamento</string>
     <string name="sc_upload_sub">Un caricamento riempie l\'anello, con una freccia ↑.</string>
+    <string name="t_peek_expandable">Messaggi espandibili</string>
+    <string name="peek_expand">Espandi (%d)</string>
+    <string name="peek_expand_single">Espandi</string>
+    <string name="peek_collapse">Comprimi</string>
+    <string name="peek_mark_all_read">Segna tutto come letto</string>
+    <string name="peek_messages_count">%1$s · %2$d messaggi</string>
+    <string name="reply_recent_context">Messaggi recenti</string>
+    <string name="quick_reply_ok">OK</string>
+    <string name="quick_reply_thanks">Grazie!</string>
+    <string name="quick_reply_on_my_way">Sto arrivando</string>
+    <string name="quick_reply_later">Più tardi</string>
+    <string name="t_overlay_tap_messages">Tocca l\'anello per leggere i messaggi</string>
+    <string name="s_droplet_size">Dimensione della goccia</string>
+    <string name="s_icon_size">Dimensione dell\'icona app</string>
+    <string name="sec_tap_zone">Zona di risposta al tocco</string>
+    <string name="s_tap_zone_x">Offset X della zona touch</string>
+    <string name="s_tap_zone_y">Offset Y della zona touch</string>
+    <string name="s_tap_zone_w">Larghezza della zona touch (0 = auto)</string>
+    <string name="s_tap_zone_h">Altezza della zona touch (0 = auto)</string>
+    <string name="tap_zone_hint">Regola se i tocchi non raggiungono l\'anello. Un bordo mostra la zona touch mentre la configuri qui.</string>
+    <string name="s_peek_width">Larghezza della scheda messaggi</string>
+    <string name="s_peek_height">Altezza max. della scheda messaggi</string>
+    <string name="s_peek_lines">Righe di anteprima del messaggio</string>
+    <string name="s_peek_font_size">Dimensione testo del messaggio</string>
+    <string name="t_charge_screen_on">Anello di ricarica a schermo acceso</string>
+    <string name="chips_charge_timeout_aod">Timer di ricarica (schermo spento)</string>
+    <string name="chips_charge_timeout_on">Timer di ricarica (schermo acceso)</string>
+    <string name="sec_battery_metrics">Statistiche batteria sotto l\'anello</string>
+    <string name="t_charge_show_percent">Percentuale batteria (%)</string>
+    <string name="t_charge_show_voltage">Tensione batteria (V)</string>
+    <string name="t_charge_show_current">Amperaggio attuale (mA)</string>
+    <string name="t_charge_show_power">Potenza di ricarica (W)</string>
 </resources>

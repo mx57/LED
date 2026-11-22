@@ -62,4 +62,18 @@
         <item>हल्की</item>
         <item>सिस्टम</item>
     </string-array>
+    <string-array name="charge_timeout_aod_labels">
+        <item>हमेशा</item>
+        <item>5 सेकंड</item>
+        <item>15 सेकंड</item>
+        <item>30 सेकंड</item>
+        <item>1 मिनट</item>
+        <item>5 मिनट</item>
+    </string-array>
+    <string-array name="charge_timeout_on_labels">
+        <item>हमेशा</item>
+        <item>5 सेकंड</item>
+        <item>10 सेकंड</item>
+        <item>30 सेकंड</item>
+    </string-array>
 </resources>

@@ -342,4 +342,36 @@
     <string name="sc_download_sub">Un téléchargement remplit l\'anneau, avec une flèche ↓.</string>
     <string name="sc_upload">Envoi</string>
     <string name="sc_upload_sub">Un envoi remplit l\'anneau, avec une flèche ↑.</string>
+    <string name="t_peek_expandable">Messages dépliables</string>
+    <string name="peek_expand">Déplier (%d)</string>
+    <string name="peek_expand_single">Déplier</string>
+    <string name="peek_collapse">Replier</string>
+    <string name="peek_mark_all_read">Tout marquer comme lu</string>
+    <string name="peek_messages_count">%1$s · %2$d messages</string>
+    <string name="reply_recent_context">Messages récents</string>
+    <string name="quick_reply_ok">OK</string>
+    <string name="quick_reply_thanks">Merci !</string>
+    <string name="quick_reply_on_my_way">J\'arrive</string>
+    <string name="quick_reply_later">Plus tard</string>
+    <string name="t_overlay_tap_messages">Touchez l\'anneau pour lire les messages</string>
+    <string name="s_droplet_size">Taille de la goutte</string>
+    <string name="s_icon_size">Taille de l\'icône d\'app</string>
+    <string name="sec_tap_zone">Zone de réponse au toucher</string>
+    <string name="s_tap_zone_x">Décalage X de la zone tactile</string>
+    <string name="s_tap_zone_y">Décalage Y de la zone tactile</string>
+    <string name="s_tap_zone_w">Largeur de la zone tactile (0 = auto)</string>
+    <string name="s_tap_zone_h">Hauteur de la zone tactile (0 = auto)</string>
+    <string name="tap_zone_hint">Ajustez si les touches n\'atteignent pas l\'anneau. Une bordure affiche la zone tactile pendant que vous la configurez ici.</string>
+    <string name="s_peek_width">Largeur de la carte de messages</string>
+    <string name="s_peek_height">Hauteur max. de la carte de messages</string>
+    <string name="s_peek_lines">Lignes d\'aperçu du message</string>
+    <string name="s_peek_font_size">Taille de police du message</string>
+    <string name="t_charge_screen_on">Anneau de charge écran allumé</string>
+    <string name="chips_charge_timeout_aod">Minuteur de charge (écran éteint)</string>
+    <string name="chips_charge_timeout_on">Minuteur de charge (écran allumé)</string>
+    <string name="sec_battery_metrics">Statistiques de batterie sous l\'anneau</string>
+    <string name="t_charge_show_percent">Pourcentage de batterie (%)</string>
+    <string name="t_charge_show_voltage">Tension de la batterie (V)</string>
+    <string name="t_charge_show_current">Intensité actuelle (mA)</string>
+    <string name="t_charge_show_power">Puissance de charge (W)</string>
 </resources>

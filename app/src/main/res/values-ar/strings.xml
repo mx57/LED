@@ -342,4 +342,36 @@
     <string name="sc_download_sub">يملأ التنزيل الحلقة مع سهم ↓.</string>
     <string name="sc_upload">الرفع</string>
     <string name="sc_upload_sub">يملأ الرفع الحلقة مع سهم ↑.</string>
+    <string name="t_peek_expandable">رسائل قابلة للتوسيع</string>
+    <string name="peek_expand">توسيع (%d)</string>
+    <string name="peek_expand_single">توسيع</string>
+    <string name="peek_collapse">طي</string>
+    <string name="peek_mark_all_read">تعليم الكل كمقروء</string>
+    <string name="peek_messages_count">%1$s · %2$d من الرسائل</string>
+    <string name="reply_recent_context">الرسائل الأخيرة</string>
+    <string name="quick_reply_ok">حسنًا</string>
+    <string name="quick_reply_thanks">شكرًا!</string>
+    <string name="quick_reply_on_my_way">أنا في الطريق</string>
+    <string name="quick_reply_later">لاحقًا</string>
+    <string name="t_overlay_tap_messages">انقر على الحلقة لقراءة الرسائل</string>
+    <string name="s_droplet_size">حجم القطرة</string>
+    <string name="s_icon_size">حجم أيقونة التطبيق</string>
+    <string name="sec_tap_zone">منطقة الاستجابة باللمس</string>
+    <string name="s_tap_zone_x">إزاحة منطقة اللمس X</string>
+    <string name="s_tap_zone_y">إزاحة منطقة اللمس Y</string>
+    <string name="s_tap_zone_w">عرض منطقة اللمس (0 = تلقائي)</string>
+    <string name="s_tap_zone_h">ارتفاع منطقة اللمس (0 = تلقائي)</string>
+    <string name="tap_zone_hint">اضبطها إذا كانت اللمسات لا تصل إلى الحلقة. يظهر إطار منطقة اللمس أثناء ضبطها هنا.</string>
+    <string name="s_peek_width">عرض بطاقة الرسائل</string>
+    <string name="s_peek_height">أقصى ارتفاع لبطاقة الرسائل</string>
+    <string name="s_peek_lines">أسطر معاينة الرسالة</string>
+    <string name="s_peek_font_size">حجم خط الرسالة</string>
+    <string name="t_charge_screen_on">حلقة الشحن أثناء تشغيل الشاشة</string>
+    <string name="chips_charge_timeout_aod">مؤقت الشحن (الشاشة مطفأة)</string>
+    <string name="chips_charge_timeout_on">مؤقت الشحن (الشاشة تعمل)</string>
+    <string name="sec_battery_metrics">إحصاءات البطارية أسفل الحلقة</string>
+    <string name="t_charge_show_percent">نسبة البطارية (%)</string>
+    <string name="t_charge_show_voltage">جهد البطارية (V)</string>
+    <string name="t_charge_show_current">التيار (mA)</string>
+    <string name="t_charge_show_power">قدرة الشحن (W)</string>
 </resources>

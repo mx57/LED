@@ -62,4 +62,18 @@
         <item>فاتح</item>
         <item>النظام</item>
     </string-array>
+    <string-array name="charge_timeout_aod_labels">
+        <item>دائمًا</item>
+        <item>5 ث</item>
+        <item>15 ث</item>
+        <item>30 ث</item>
+        <item>1 د</item>
+        <item>5 د</item>
+    </string-array>
+    <string-array name="charge_timeout_on_labels">
+        <item>دائمًا</item>
+        <item>5 ث</item>
+        <item>10 ث</item>
+        <item>30 ث</item>
+    </string-array>
 </resources>
