@@ -47,8 +47,26 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            val release = signingConfigs.getByName("release")
-            signingConfig = if (release.storeFile != null) release else signingConfigs.getByName("debug")
+            val releaseSign = signingConfigs.getByName("release")
+            when {
+                releaseSign.storeFile != null -> signingConfig = releaseSign
+                // Pull requests from other forks see no signing secrets: build a clearly marked
+                // test APK instead of failing the check. It is debug-signed and the CI publish
+                // gate (SIGNED != 'release' in build.yml) never publishes it.
+                System.getenv("GITHUB_EVENT_NAME") == "pull_request" -> {
+                    signingConfig = signingConfigs.getByName("debug")
+                    versionNameSuffix = "-test"
+                    logger.warn("Glow LED: no release keystore on CI - building a TEST APK signed with the debug key; never publish it.")
+                }
+                // Everywhere else a release build without the release keystore fails loudly:
+                // a debug-signed 'release' breaks in-app updates (the updater pins the release
+                // certificate) and looks like a trustworthy build while it is not.
+                else -> throw GradleException(
+                    "Glow LED: no release keystore found (keystore.properties locally, or the " +
+                        "GLOWLED_KEYSTORE env variables on CI). Refusing to build a release APK signed " +
+                        "with the debug key. Configure release signing first, or build assembleDebug instead.",
+                )
+            }
         }
         debug {
             applicationIdSuffix = ".debug"
