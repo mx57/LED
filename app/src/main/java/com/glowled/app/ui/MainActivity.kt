@@ -33,6 +33,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
@@ -114,6 +115,9 @@ class MainActivity : AppCompatActivity() {
     private var unknownSub: TextView? = null
     private var updateSub: TextView? = null
     private var setupIncomplete = false
+    /** Dialogs that must not outlive a rotation: dismissed in onDestroy, their callbacks guarded. */
+    private var quietPicker: TimePickerDialog? = null
+    private var tutorialDialog: AlertDialog? = null
 
     private val prefs get() = LedController.prefs
     private val density by lazy { resources.displayMetrics.density }
@@ -295,6 +299,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         prefs.sp.unregisterOnSharedPreferenceChangeListener(prefsListener)
+        quietPicker?.dismiss()
+        tutorialDialog?.dismiss()
         super.onDestroy()
     }
 
@@ -788,15 +794,17 @@ class MainActivity : AppCompatActivity() {
         )
         var step = 0
         fun showStep() {
-            val dialog = MaterialAlertDialogBuilder(this)
+            if (isDestroyed) return
+            val builder = MaterialAlertDialogBuilder(this)
                 .setTitle(getString(R.string.tutorial_step, step + 1, sections.size))
                 .setMessage(sections[step])
                 .setPositiveButton(if (step == sections.lastIndex) R.string.tutorial_done else R.string.tutorial_next) { _, _ ->
                     if (step < sections.lastIndex) { step++; showStep() }
                 }
                 .setNegativeButton(R.string.tutorial_later, null)
-            if (step > 0) dialog.setNeutralButton(R.string.tutorial_back) { _, _ -> step--; showStep() }
-            dialog.show()
+            if (step > 0) builder.setNeutralButton(R.string.tutorial_back) { _, _ -> step--; showStep() }
+            tutorialDialog = builder.create()
+            tutorialDialog?.show()
         }
         showStep()
     }
@@ -904,14 +912,22 @@ class MainActivity : AppCompatActivity() {
 
     private fun pickQuietHours() {
         val is24 = DateFormat.is24HourFormat(this)
-        TimePickerDialog(this, { _, h, m ->
+        quietPicker = quietTimePicker(R.string.quiet_start, prefs.quietStart, is24) { h, m ->
             prefs.sp.edit().putInt("quiet_start", h * 60 + m).apply()
-            TimePickerDialog(this, { _, h2, m2 ->
+            // The activity can die between the two pickers (rotation), so guard the second too.
+            quietPicker = quietTimePicker(R.string.quiet_end, prefs.quietEnd, is24) { h2, m2 ->
                 prefs.sp.edit().putInt("quiet_end", h2 * 60 + m2).apply()
                 quietSub?.text = quietText()
-            }, prefs.quietEnd / 60, prefs.quietEnd % 60, is24).apply { setTitle(R.string.quiet_end) }.show()
-        }, prefs.quietStart / 60, prefs.quietStart % 60, is24).apply { setTitle(R.string.quiet_start) }.show()
+            }
+            quietPicker?.show()
+        }
+        quietPicker?.show()
     }
+
+    /** A quiet-hours picker whose callback is ignored once the activity is destroyed. */
+    private fun quietTimePicker(title: Int, minutes: Int, is24: Boolean, onPick: (Int, Int) -> Unit): TimePickerDialog =
+        TimePickerDialog(this, { _, h, m -> if (!isDestroyed) onPick(h, m) }, minutes / 60, minutes % 60, is24)
+            .apply { setTitle(title) }
 
     // ---- animation carousel --------------------------------------------------------------------
 

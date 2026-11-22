@@ -14,6 +14,7 @@ import android.widget.GridLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import com.glowled.app.R
 import com.glowled.app.view.ColorWheelView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -32,8 +33,9 @@ object ColorPickerDialog {
         0xFF25D366, 0xFF0088CC, 0xFFE1306C, 0xFF1877F2, 0xFFEA4335, 0xFFFFFFFF,
     ).map { it.toInt() }.toIntArray()
 
-    /** [onPick] receives the chosen colour, or 0 when "Automatic" is chosen (if [allowAuto]). */
-    fun show(context: Context, initial: Int, allowAuto: Boolean, onPick: (Int) -> Unit) {
+    /** [onPick] receives the chosen colour, or 0 when "Automatic" is chosen (if [allowAuto]).
+     *  Returns the shown dialog so the caller can dismiss it when its activity dies. */
+    fun show(context: Context, initial: Int, allowAuto: Boolean, onPick: (Int) -> Unit): AlertDialog {
         val dp = context.resources.displayMetrics.density
         fun px(v: Int) = (v * dp).toInt()
         var current = if (initial == 0) presets[0] else initial or 0xFF000000.toInt()
@@ -151,6 +153,6 @@ object ColorPickerDialog {
             .setPositiveButton(R.string.ok) { _, _ -> onPick(current) }
             .setNegativeButton(R.string.cancel, null)
         if (allowAuto) b.setNeutralButton(R.string.color_auto) { _, _ -> onPick(0) }
-        b.show()
+        return b.show()
     }
 }

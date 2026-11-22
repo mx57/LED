@@ -15,6 +15,7 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -36,6 +37,8 @@ class AppsActivity : AppCompatActivity() {
     private var shown = emptyList<AppItem>()
     private val prefs get() = LedController.prefs
     private val adapter = Adapter()
+    /** The open colour picker, if any; dismissed in onDestroy so it cannot fire into a dead activity. */
+    private var colorDialog: AlertDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         goEdgeToEdge()
@@ -92,6 +95,7 @@ class AppsActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        colorDialog?.dismiss()
         io.shutdownNow()
         super.onDestroy()
     }
@@ -123,16 +127,19 @@ class AppsActivity : AppCompatActivity() {
             val cached = icons.get(item.pkg)
             h.icon.setImageDrawable(cached)
             if (cached == null) {
-                io.execute {
+                if (!isDestroyed && !io.isShutdown) io.execute {
                     val d = try { packageManager.getApplicationIcon(item.pkg) } catch (_: Exception) { null }
                     if (d != null) icons.put(item.pkg, d)
                     main.post { if (h.pkg == item.pkg) h.icon.setImageDrawable(d) }
                 }
             }
             val pick = View.OnClickListener {
-                ColorPickerDialog.show(this@AppsActivity, prefs.appColor(item.pkg), allowAuto = true) { c ->
-                    prefs.setAppColor(item.pkg, c)
-                    bindColor(h, item.pkg)
+                colorDialog = ColorPickerDialog.show(this@AppsActivity, prefs.appColor(item.pkg), allowAuto = true) { c ->
+                    // The activity may have been destroyed while the picker was open.
+                    if (!isDestroyed) {
+                        prefs.setAppColor(item.pkg, c)
+                        bindColor(h, item.pkg)
+                    }
                 }
             }
             h.swatch.setOnClickListener(pick)
@@ -147,7 +154,9 @@ class AppsActivity : AppCompatActivity() {
             } else {
                 h.colorLabel.setText(R.string.apps_auto)
                 h.swatch.backgroundTintList = null
-                io.execute {
+                // A late dialog callback can reach a destroyed activity whose executor is already
+                // shut down; without the guard this throws RejectedExecutionException.
+                if (!isDestroyed && !io.isShutdown) io.execute {
                     val c = LedController.colors.iconColor(pkg).takeIf { it != 0 } ?: prefs.defaultColor
                     main.post {
                         if (h.pkg == pkg && prefs.appColor(pkg) == 0) h.swatch.backgroundTintList = ColorStateList.valueOf(c)
