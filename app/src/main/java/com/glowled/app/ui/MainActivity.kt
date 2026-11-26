@@ -584,6 +584,7 @@ class MainActivity : AppCompatActivity() {
             Toggle(getString(R.string.t_ring_on), "overlay_enabled", true),
             Toggle(getString(R.string.t_lock_only), "overlay_lock_only", false, ringOn),
             Toggle(getString(R.string.t_overlay_tap_messages), "overlay_tap_messages", true) { prefs.overlayEnabled && !prefs.overlayLockOnly },
+            Toggle(getString(R.string.t_drag_ring), "drag_ring_enabled", true, ringOn),
             Toggle(getString(R.string.t_droplet), "droplet", true, ringOn),
         ))
         val ringCard = ui.card(col)
@@ -591,6 +592,14 @@ class MainActivity : AppCompatActivity() {
             Range(getString(R.string.s_droplet_size), "droplet_size", 4, 28, 10, "dp"),
             Range(getString(R.string.s_icon_size), "app_icon_size", 24, 72, 36, "dp"),
             dependsOn = ringOn)
+        ui.divider(ringCard)
+        ui.link(ringCard, R.drawable.ic_s_camera, getString(R.string.ring_pos_title), getString(R.string.ring_pos_sub), RowIcons.CYAN) {
+            startActivity(Intent(this, CutoutActivity::class.java))
+        }
+        ui.divider(ringCard)
+        ui.link(ringCard, R.drawable.ic_s_rotate, getString(R.string.ring_pos_reset), getString(R.string.ring_pos_reset_sub), RowIcons.GREY) {
+            resetRingToCamera()
+        }
         section(col, R.string.sec_tap_zone)
         val tz = ui.card(col)
         ui.sliders(tz,
@@ -613,12 +622,17 @@ class MainActivity : AppCompatActivity() {
             Toggle(getString(R.string.t_peek_actions), "peek_actions", true) { tapOn() && prefs.showContent },
         ))
         val peekCardOn = ui.card(col)
+        ui.chips(peekCardOn, getString(R.string.chips_peek_pos), "peek_position",
+            labels(R.array.peek_pos_labels), listOf("below", "above", "left", "right", "auto"), "below") { tapOn() && prefs.showContent }
         ui.sliders(peekCardOn,
+            Range(getString(R.string.s_peek_offset), "peek_offset_dp", 4, 60, 14, "dp"),
             Range(getString(R.string.s_peek_width), "peek_width", 180, 480, 340, "dp"),
-            Range(getString(R.string.s_peek_height), "peek_height", 150, 700, 380, "dp"),
             dependsOn = { tapOn() && prefs.showContent })
         ui.sliders(peekCardOn,
+            Range(getString(R.string.s_peek_height), "peek_height", 150, 700, 380, "dp"),
             Range(getString(R.string.s_peek_lines), "peek_lines", 1, 20, 4, ""),
+            dependsOn = { tapOn() && prefs.showContent })
+        ui.sliders(peekCardOn,
             Range(getString(R.string.s_peek_font_size), "peek_font_size", 10, 24, 14, "sp"),
             dependsOn = { tapOn() && prefs.showContent })
         ui.dependOn(peekCardOn.parent as View) { tapOn() && prefs.showContent }
@@ -694,6 +708,16 @@ class MainActivity : AppCompatActivity() {
         col.addView(hint(getString(R.string.transfer_hint)))
         col.addView(hint(getString(R.string.screen_on_hint)))
         return page
+    }
+
+    private fun resetRingToCamera() {
+        val size = CutoutGeometry.naturalSize(this)
+        val g = if (CutoutGeometry.isPortrait(this)) CutoutGeometry.detect(this) ?: CutoutGeometry.fallback(this)
+        else CutoutGeometry.fallback(this)
+        prefs.saveCutout(g.shape, g.cx, g.cy, g.w, g.h, size.x)
+        configureCameraLed()
+        LedController.refreshAll()
+        Toast.makeText(this, R.string.cut_saved, Toast.LENGTH_SHORT).show()
     }
 
     private fun pageAlerts(): View {

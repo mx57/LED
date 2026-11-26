@@ -82,4 +82,11 @@
         <item>Слева</item>
         <item>Сверху</item>
     </string-array>
+    <string-array name="peek_pos_labels">
+        <item>Снизу</item>
+        <item>Сверху</item>
+        <item>Слева</item>
+        <item>Справа</item>
+        <item>Авто</item>
+    </string-array>
 </resources>

@@ -46,6 +46,8 @@ object RowIcons {
         // Screen on
         "overlay_enabled" to (R.drawable.ic_s_ring to BLUE),
         "overlay_lock_only" to (R.drawable.ic_s_lock to DARK_GREY),
+        "drag_ring_enabled" to (R.drawable.ic_s_tap to CYAN),
+        "peek_position" to (R.drawable.ic_s_layers to INDIGO),
         "charge_led" to (R.drawable.ic_s_bolt to GREEN),
         "charge_screen_on" to (R.drawable.ic_s_ring to GREEN),
         "charge_timeout_aod" to (R.drawable.ic_s_clock to BLUE),

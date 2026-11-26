@@ -13,6 +13,7 @@ import android.util.Log
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.widget.FrameLayout
 import androidx.core.view.doOnLayout
@@ -22,6 +23,7 @@ import com.glowled.app.core.Geometry
 import com.glowled.app.core.LedController
 import com.glowled.app.core.MeterIcon
 import com.glowled.app.core.NotificationStore
+import com.glowled.app.core.OverlayLayout
 import com.glowled.app.ui.ReplyActivity
 import com.glowled.app.view.AppInfoView
 import com.glowled.app.view.LedView
@@ -59,6 +61,15 @@ object ScreenOnOverlay {
 
     private var peekPkg: String? = null
     private var newestTime = 0L
+
+    private var isDragging = false
+    private var dragCx = 0f
+    private var dragCy = 0f
+    private var dragStartX = 0f
+    private var dragStartY = 0f
+    private var dragOrigCx = 0f
+    private var dragOrigCy = 0f
+    private val startDragRunnable = Runnable { beginDrag() }
 
     private val listener: () -> Unit = { main.post { onStoreChanged() } }
 
@@ -102,13 +113,38 @@ object ScreenOnOverlay {
             return
         }
 
+        val touchSlop = ViewConfiguration.get(ctx).scaledTouchSlop
+        val longPressTimeout = ViewConfiguration.getLongPressTimeout().toLong()
         val r = object : RootLayout(ctx) {
             private var downX = 0f; private var downY = 0f; private var downT = 0L
             override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
-                if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
-                    downX = ev.rawX; downY = ev.rawY; downT = ev.eventTime
-                    val loc = IntArray(2); getLocationOnScreen(loc)
-                    DebugLog.add("Screen-on touch down ($state) at ${ev.rawX.toInt()},${ev.rawY.toInt()} win=${loc[0]},${loc[1]} ${width}x${height}")
+                when (ev.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> {
+                        downX = ev.rawX; downY = ev.rawY; downT = ev.eventTime
+                        val loc = IntArray(2); getLocationOnScreen(loc)
+                        DebugLog.add("Screen-on touch down ($state) at ${ev.rawX.toInt()},${ev.rawY.toInt()} win=${loc[0]},${loc[1]} ${width}x${height}")
+                        if (state == State.COLLAPSED && LedController.prefs.dragRingEnabled && !LedController.prefs.style.isEdge) {
+                            dragStartX = ev.rawX; dragStartY = ev.rawY
+                            main.removeCallbacks(startDragRunnable)
+                            main.postDelayed(startDragRunnable, longPressTimeout)
+                        }
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        if (isDragging) {
+                            updateDrag(ev.rawX, ev.rawY)
+                            return true
+                        }
+                        if (abs(ev.rawX - downX) > touchSlop || abs(ev.rawY - downY) > touchSlop) {
+                            main.removeCallbacks(startDragRunnable)
+                        }
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        main.removeCallbacks(startDragRunnable)
+                        if (isDragging) {
+                            finishDrag(save = ev.actionMasked == MotionEvent.ACTION_UP)
+                            return true
+                        }
+                    }
                 }
                 val handled = super.dispatchTouchEvent(ev)
                 if (ev.actionMasked == MotionEvent.ACTION_UP) {
@@ -204,17 +240,58 @@ object ScreenOnOverlay {
         val e = extentPx(g, prefs, d)
         val ringW = maxOf(e * 2, (120 * d).toInt())
         val autoW = ringW
-        val autoH = (g.cy.toInt() + e + (DROP_DP * d).toInt() * 2 + (120 * d).toInt())
-            .coerceAtLeast(e * 2 + (DROP_DP * d).toInt() * 2)
+        val autoH = maxOf(e * 2 + (DROP_DP * d).toInt() * 2, (120 * d).toInt())
         val w = if (prefs.tapZoneWidthDp > 0) (prefs.tapZoneWidthDp * d).toInt().coerceAtLeast((40 * d).toInt()) else autoW
         val h = if (prefs.tapZoneHeightDp > 0) (prefs.tapZoneHeightDp * d).toInt().coerceAtLeast((40 * d).toInt()) else autoH
         val dm = ctx.resources.displayMetrics
         var x = (g.cx - w / 2f).toInt() + (prefs.tapZoneOffsetXDp * d).toInt()
-        var y = 0 + (prefs.tapZoneOffsetYDp * d).toInt()
+        var y = (g.cy - h / 2f).toInt() + (prefs.tapZoneOffsetYDp * d).toInt()
         // Keep on screen.
         x = x.coerceIn(0, (dm.widthPixels - w).coerceAtLeast(0))
         y = y.coerceIn(0, (dm.heightPixels - h).coerceAtLeast(0))
         return android.graphics.Rect(x, y, x + w, y + h)
+    }
+
+    private fun beginDrag() {
+        if (state != State.COLLAPSED || root == null) return
+        val ctx = windowCtx ?: return
+        val g = geometry(ctx)
+        isDragging = true
+        dragOrigCx = g.cx
+        dragOrigCy = g.cy
+        dragCx = g.cx
+        dragCy = g.cy
+        root?.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+        val type = windowType()
+        if (type != 0) applyWindow(type)
+        DebugLog.add("Screen-on ring drag started at ${dragCx.toInt()},${dragCy.toInt()}")
+    }
+
+    private fun updateDrag(rawX: Float, rawY: Float) {
+        val ctx = windowCtx ?: return
+        val ledView = led ?: return
+        val prefs = LedController.prefs
+        val g = geometry(ctx)
+        val dm = ctx.resources.displayMetrics
+        val margin = (g.w / 2f + prefs.gapDp * dm.density + prefs.thicknessDp * dm.density).coerceAtLeast(16 * dm.density)
+        dragCx = (dragOrigCx + (rawX - dragStartX)).coerceIn(margin, (dm.widthPixels - margin).coerceAtLeast(margin))
+        dragCy = (dragOrigCy + (rawY - dragStartY)).coerceIn(margin, (dm.heightPixels - margin).coerceAtLeast(margin))
+        ledView.configure(prefs, g.copy(cx = dragCx, cy = dragCy), NotificationStore.colors())
+    }
+
+    private fun finishDrag(save: Boolean) {
+        isDragging = false
+        if (save) {
+            val ctx = windowCtx ?: return
+            val g = geometry(ctx)
+            val screenW = CutoutGeometry.naturalSize(ctx).x
+            LedController.prefs.saveCutout(g.shape, dragCx, dragCy, g.w, g.h, screenW)
+            root?.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
+            DebugLog.add("Screen-on ring moved to ${dragCx.toInt()},${dragCy.toInt()}")
+            LedController.refreshAll()
+        } else {
+            refresh()
+        }
     }
 
     private fun currentParams(): WindowManager.LayoutParams? = root?.layoutParams as? WindowManager.LayoutParams
@@ -261,7 +338,7 @@ object ScreenOnOverlay {
             WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
             WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
         val p: WindowManager.LayoutParams
-        if (prefs.style.isEdge) {
+        if (prefs.style.isEdge || isDragging) {
             p = WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
                 type, flags, PixelFormat.TRANSLUCENT,
@@ -269,9 +346,7 @@ object ScreenOnOverlay {
             p.gravity = Gravity.TOP or Gravity.START
         } else {
             val e = ledView.extentPx(g)
-            val peekW = (prefs.peekWidthDp * d).toInt().coerceIn((180 * d).toInt(), (ctx.resources.displayMetrics.widthPixels - (24 * d).toInt()))
-            val ringW = maxOf(e * 2, (120 * d).toInt())
-            val expandedW = maxOf(ringW, peekW + (24 * d).toInt(), (220 * d).toInt())
+            val dm = ctx.resources.displayMetrics
             if (state == State.COLLAPSED) {
                 val tz = tapZoneRect(ctx)
                 val extraLeft = if (prefs.cpuIndicator) {
@@ -295,24 +370,26 @@ object ScreenOnOverlay {
                     ey
                 } else 0
 
-                val w = tz.width() + extraLeft + extraRight
-                val h = tz.height() + extraTop + extraBottom
+                val w = (tz.width() + extraLeft + extraRight).coerceAtMost(dm.widthPixels)
+                val h = (tz.height() + extraTop + extraBottom).coerceAtMost(dm.heightPixels)
                 p = WindowManager.LayoutParams(w, h, type, flags, PixelFormat.TRANSLUCENT)
                 p.gravity = Gravity.TOP or Gravity.START
-                p.x = (tz.left - extraLeft).coerceAtLeast(0)
-                p.y = (tz.top - extraTop).coerceAtLeast(0)
+                p.x = (tz.left - extraLeft).coerceIn(0, (dm.widthPixels - w).coerceAtLeast(0))
+                p.y = (tz.top - extraTop).coerceIn(0, (dm.heightPixels - h).coerceAtLeast(0))
             } else {
-                val w = expandedW
-                val x = (g.cx - w / 2f).toInt()
-                val y = (g.cy - e).toInt()
-                val h = when (state) {
-                    State.ICONS -> e + (300 * d).toInt()
-                    State.PEEK -> (ctx.resources.displayMetrics.heightPixels - y).coerceAtLeast(e + (prefs.peekHeightDp * d).toInt() + (80 * d).toInt())
-                    else -> e * 2
-                }
+                val layout = computeLayout(ctx, g, e)
+                val wb = layout.windowBounds
+                val pad = (16 * d).toInt()
+                val wx = (wb.left - pad).coerceAtLeast(0)
+                val wy = (wb.top - pad).coerceAtLeast(0)
+                val wr = (wb.right + pad).coerceAtMost(dm.widthPixels)
+                val wBottom = (wb.bottom + pad).coerceAtMost(dm.heightPixels)
+                val w = maxOf(wr - wx, e * 2).coerceAtMost(dm.widthPixels)
+                val h = maxOf(wBottom - wy, e * 2).coerceAtMost(dm.heightPixels)
                 p = WindowManager.LayoutParams(w, h, type, flags, PixelFormat.TRANSLUCENT)
                 p.gravity = Gravity.TOP or Gravity.START
-                p.x = x; p.y = y
+                p.x = wx.coerceIn(0, (dm.widthPixels - w).coerceAtLeast(0))
+                p.y = wy.coerceIn(0, (dm.heightPixels - h).coerceAtLeast(0))
             }
         }
         p.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
@@ -360,6 +437,48 @@ object ScreenOnOverlay {
         r.post { positionChildren() }
     }
 
+    private fun computeLayout(ctx: Context, g: Geometry, ringExtent: Int): OverlayLayout.Result {
+        val prefs = LedController.prefs
+        val dm = ctx.resources.displayMetrics
+        val d = dm.density
+        val marginPx = (12 * d).toInt()
+        val infoView = info
+        val peekView = peek
+        val infoW = infoView?.measuredWidth?.takeIf { it > 0 } ?: (220 * d).toInt()
+        val infoH = infoView?.measuredHeight?.takeIf { it > 0 } ?: (56 * d).toInt()
+        val estPeekW = (prefs.peekWidthDp * d).toInt().coerceIn((180 * d).toInt(), (dm.widthPixels - 2 * marginPx).coerceAtLeast(180))
+        val peekW = peekView?.measuredWidth?.takeIf { it > 0 } ?: estPeekW
+        val peekH = peekView?.measuredHeight?.takeIf { it > 0 } ?: (prefs.peekHeightDp * d).toInt()
+        val ledLoc = IntArray(2)
+        val ledView = led
+        val indBottom = if (ledView != null && ledView.isAttachedToWindow) {
+            ledView.getLocationOnScreen(ledLoc)
+            ledLoc[1] + ledView.indicatorBottom()
+        } else {
+            g.cy + ringExtent
+        }
+        return OverlayLayout.compute(
+            OverlayLayout.Input(
+                screenW = dm.widthPixels,
+                screenH = dm.heightPixels,
+                marginPx = marginPx,
+                safeTopPx = marginPx,
+                ringCx = g.cx,
+                ringCy = g.cy,
+                ringExtentPx = ringExtent,
+                indicatorBottom = indBottom,
+                infoW = infoW,
+                infoH = infoH,
+                showInfo = state != State.COLLAPSED && (infoView?.visibility == View.VISIBLE),
+                peekW = peekW,
+                peekH = peekH,
+                showPeek = state == State.PEEK && (peekView?.isShowing() == true),
+                position = prefs.peekPosition,
+                offsetPx = (prefs.peekOffsetDp * d).toInt(),
+            )
+        )
+    }
+
     private fun positionChildren() {
         val r = root ?: return
         val ctx = windowCtx ?: return
@@ -370,13 +489,9 @@ object ScreenOnOverlay {
         val loc = IntArray(2)
         r.getLocationOnScreen(loc)
         val g = geometry(ctx)
-        val d = ctx.resources.displayMetrics.density
-        val safeTop = max(ledView.indicatorBottom() + 16 * d, 8 * d)
-        val infoX = g.cx - loc[0] - infoView.measuredWidth / 2f
-        val infoY = safeTop
-        place(infoView, infoX, infoY)
-        val peekY = infoY + (if (infoView.visibility == View.VISIBLE) infoView.measuredHeight + 14 * d else 0f)
-        place(peekView, g.cx - loc[0] - peekView.measuredWidth / 2f, peekY)
+        val layout = computeLayout(ctx, g, ledView.extentPx(g))
+        place(infoView, layout.infoRect.left.toFloat() - loc[0], layout.infoRect.top.toFloat() - loc[1])
+        place(peekView, layout.peekRect.left.toFloat() - loc[0], layout.peekRect.top.toFloat() - loc[1])
     }
 
     private fun place(v: View, x: Float, y: Float) {
@@ -398,8 +513,7 @@ object ScreenOnOverlay {
     private fun expandToIcons(withDroplet: Boolean = false) {
         val prefs = LedController.prefs
         bindApps()
-        // show icons (even if one app) to satisfy "раскрывается несколько кружков"
-        if (state == State.COLLAPSED) setState(State.ICONS) else setState(State.ICONS)
+        setState(State.ICONS)
         main.removeCallbacks(hidePeekRunnable)
         val newest = NotificationStore.apps().firstOrNull()
         if (withDroplet && prefs.droplet && newest != null) {
@@ -600,6 +714,7 @@ object ScreenOnOverlay {
     }
 
     private fun cleanupRefs() {
+        isDragging = false
         root = null; led = null; info = null; peek = null; wm = null; windowCtx = null
         usingA11y = false; state = State.COLLAPSED; peekPkg = null
     }

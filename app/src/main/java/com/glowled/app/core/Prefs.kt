@@ -106,6 +106,12 @@ class Prefs(context: Context) {
     val peekLines get() = int("peek_lines", 4).coerceIn(1, 20)
     /** Message font size in sp. */
     val peekFontSizeSp get() = int("peek_font_size", 14).coerceIn(10, 24)
+    /** Where the peek card appears relative to the ring: below, above, left, right, auto. */
+    val peekPosition: PeekPosition get() = PeekPosition.from(str("peek_position", PeekPosition.BELOW.key))
+    /** Gap between the ring / icon row and the message plate in dp. */
+    val peekOffsetDp get() = int("peek_offset_dp", 14).coerceIn(4, 60)
+    /** Allow moving the ring anywhere on screen via long-press + drag. */
+    val dragRingEnabled get() = bool("drag_ring_enabled", true)
     /** Always-on icons as monochrome glyphs (One UI AOD style) instead of full-colour app icons. */
     val aodIcons get() = bool("aod_icons", true)
 

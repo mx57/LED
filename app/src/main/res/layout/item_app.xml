@@ -48,6 +48,16 @@
                 android:textColor="@color/text_secondary" />
         </LinearLayout>
 
+        <ImageView
+            android:id="@+id/priority"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginEnd="10dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/cd_app_priority"
+            android:padding="4dp"
+            android:src="@android:drawable/btn_star_big_on" />
+
         <View
             android:id="@+id/swatch"
             android:layout_width="32dp"

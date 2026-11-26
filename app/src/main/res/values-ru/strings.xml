@@ -391,5 +391,13 @@
     <string name="snooze_off">Выкл</string>
     <string name="tile_snooze_sub">Пауза · %d мин</string>
     <string name="block_snoozed">Приостановлено пользователем</string>
+    <string name="t_drag_ring">Перетаскивать кольцо долгим тапом</string>
+    <string name="ring_pos_title">Положение и размер кольца</string>
+    <string name="ring_pos_sub">Разместить в любом месте экрана</string>
+    <string name="ring_pos_reset">Вернуть кольцо к камере</string>
+    <string name="ring_pos_reset_sub">Автоопределение выреза</string>
+    <string name="chips_peek_pos">Сторона плашки сообщений</string>
+    <string name="s_peek_offset">Отступ плашки от кольца</string>
+    <string name="cd_app_priority">Приоритетное приложение</string>
 </resources>
 

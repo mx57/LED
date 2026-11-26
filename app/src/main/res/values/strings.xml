@@ -392,5 +392,13 @@
     <string name="snooze_off">Off</string>
     <string name="tile_snooze_sub">Paused · %d min</string>
     <string name="block_snoozed">Paused by user</string>
+    <string name="t_drag_ring">Move ring with long press</string>
+    <string name="ring_pos_title">Ring position &amp; size</string>
+    <string name="ring_pos_sub">Place anywhere on screen</string>
+    <string name="ring_pos_reset">Reset ring to camera</string>
+    <string name="ring_pos_reset_sub">Auto-detect cutout position</string>
+    <string name="chips_peek_pos">Message plate side</string>
+    <string name="s_peek_offset">Plate offset from ring</string>
+    <string name="cd_app_priority">Priority app</string>
 </resources>
 

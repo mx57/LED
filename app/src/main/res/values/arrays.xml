@@ -95,4 +95,11 @@
         <item>Left</item>
         <item>Above</item>
     </string-array>
+    <string-array name="peek_pos_labels">
+        <item>Below</item>
+        <item>Above</item>
+        <item>Left</item>
+        <item>Right</item>
+        <item>Auto</item>
+    </string-array>
 </resources>

@@ -100,6 +100,7 @@ class AppsActivity : AppCompatActivity() {
         val icon: ImageView = v.findViewById(R.id.icon)
         val label: TextView = v.findViewById(R.id.label)
         val colorLabel: TextView = v.findViewById(R.id.colorLabel)
+        val priority: ImageView = v.findViewById(R.id.priority)
         val swatch: View = v.findViewById(R.id.swatch)
         val toggle: GlowSwitch = v.findViewById(R.id.toggle)
         var pkg: String? = null
@@ -116,6 +117,11 @@ class AppsActivity : AppCompatActivity() {
             h.pkg = item.pkg
             h.label.text = item.label
             bindColor(h, item.pkg)
+            bindPriority(h, item.pkg)
+            h.priority.setOnClickListener {
+                prefs.setAppPriority(item.pkg, !prefs.appPriority(item.pkg))
+                bindPriority(h, item.pkg)
+            }
             h.toggle.setOnCheckedChangeListener(null)
             h.toggle.isChecked = prefs.appEnabled(item.pkg)
             h.toggle.setOnCheckedChangeListener { _, on -> prefs.setAppEnabled(item.pkg, on) }
@@ -137,6 +143,14 @@ class AppsActivity : AppCompatActivity() {
             }
             h.swatch.setOnClickListener(pick)
             h.itemView.setOnClickListener(pick)
+        }
+
+        private fun bindPriority(h: Holder, pkg: String) {
+            val prio = prefs.appPriority(pkg)
+            h.priority.alpha = if (prio) 1f else 0.3f
+            h.priority.imageTintList = ColorStateList.valueOf(
+                if (prio) 0xFFFFB300.toInt() else getColor(R.color.text_secondary),
+            )
         }
 
         private fun bindColor(h: Holder, pkg: String) {

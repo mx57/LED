@@ -215,13 +215,32 @@ class AodSession(
             }
         }
         val g = geometry()
-        // Window coordinates: below the ring, below the status-bar/cutout band, never at the very edge.
-        val safeTop = max(led.indicatorBottom() + 16 * density, statusBandPx() + 8 * density)
-        infoX = g.cx - loc[0] - info.measuredWidth / 2f + led.shiftX
-        infoY = max(safeTop, 8 * density) + led.shiftY
+        val dm = context.resources.displayMetrics
+        val marginPx = (12 * density).toInt()
+        val layout = com.glowled.app.core.OverlayLayout.compute(
+            com.glowled.app.core.OverlayLayout.Input(
+                screenW = dm.widthPixels,
+                screenH = dm.heightPixels,
+                marginPx = marginPx,
+                safeTopPx = statusBandPx() + (8 * density).toInt(),
+                ringCx = g.cx + led.shiftX,
+                ringCy = g.cy + led.shiftY,
+                ringExtentPx = led.extentPx(g),
+                indicatorBottom = loc[1] + led.indicatorBottom() + led.shiftY,
+                infoW = info.measuredWidth,
+                infoH = info.measuredHeight,
+                showInfo = info.visibility == View.VISIBLE,
+                peekW = peek.measuredWidth,
+                peekH = peek.measuredHeight,
+                showPeek = peek.isShowing(),
+                position = prefs.peekPosition,
+                offsetPx = (prefs.peekOffsetDp * density).toInt(),
+            )
+        )
+        infoX = layout.infoRect.left.toFloat() - loc[0]
+        infoY = layout.infoRect.top.toFloat() - loc[1]
         place(info, infoX, infoY)
-        val peekY = infoY + (if (info.visibility == View.VISIBLE) info.measuredHeight + 14 * density else 0f)
-        place(peek, g.cx - loc[0] - peek.measuredWidth / 2f, peekY)
+        place(peek, layout.peekRect.left.toFloat() - loc[0], layout.peekRect.top.toFloat() - loc[1])
     }
 
     /** Where the strip sits (window coordinates); the droplet aims here. */

@@ -78,7 +78,7 @@ class CutoutActivity : AppCompatActivity() {
 
         val box = findViewById<LinearLayout>(R.id.sliders)
         addSlider(box, "x", R.string.label_x, screenW) { cx = it.toFloat() }
-        addSlider(box, "y", R.string.label_y, screenH / 3) { cy = it.toFloat() }
+        addSlider(box, "y", R.string.label_y, screenH) { cy = it.toFloat() }
         addSlider(box, "w", R.string.label_w, screenW / 2) { w = max(2, it).toFloat(); if (shape.isRound()) h = w }
         addSlider(box, "h", R.string.label_h, screenH / 8) { h = max(2, it).toFloat(); if (shape.isRound()) w = h }
         addSlider(box, "gap", R.string.label_gap, 20) { gapDp = it }
@@ -191,7 +191,7 @@ class CutoutActivity : AppCompatActivity() {
     private fun sync() {
         syncing = true
         cx = cx.coerceIn(0f, screenW.toFloat())
-        cy = cy.coerceIn(0f, screenH / 3f)
+        cy = cy.coerceIn(0f, screenH.toFloat())
         fun set(key: String, v: Int, text: String) {
             val (s, t) = sliders[key] ?: return
             s.progress = v
