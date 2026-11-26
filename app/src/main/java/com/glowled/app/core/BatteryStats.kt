@@ -13,12 +13,14 @@ data class BatteryInfo(
     val currentMa: Int,
     val powerWatts: Float,
     val isCharging: Boolean,
+    val tempC: Float = 0f,
 ) {
     fun formatString(
         showPercent: Boolean,
         showVoltage: Boolean,
         showCurrent: Boolean,
         showPower: Boolean,
+        showTemp: Boolean = false,
     ): String? {
         val row1 = mutableListOf<String>()
         val row2 = mutableListOf<String>()
@@ -35,6 +37,9 @@ data class BatteryInfo(
         }
         if (showPower && powerWatts > 0.05f) {
             row2.add(String.format(Locale.US, "%.1fW", powerWatts))
+        }
+        if (showTemp && tempC > 0f) {
+            row2.add(String.format(Locale.US, "%.1f°C", tempC))
         }
 
         return when {
@@ -81,12 +86,16 @@ object BatteryStats {
         val cAmps = abs(effectiveCurrentMa) / 1000f
         val powerWatts = if (vVolts > 0f && cAmps > 0f) vVolts * cAmps else 0f
 
+        val rawTemp = intent?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, -1) ?: -1
+        val tempC = if (rawTemp > 0) rawTemp / 10f else 0f
+
         return BatteryInfo(
             level = level,
             voltageMv = voltageMv,
             currentMa = effectiveCurrentMa,
             powerWatts = powerWatts,
             isCharging = isCharging,
+            tempC = tempC,
         )
     }
 

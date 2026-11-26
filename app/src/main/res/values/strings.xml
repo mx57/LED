@@ -408,5 +408,8 @@
     <string name="info_pos_reset">Reset app icon to ring</string>
     <string name="info_pos_reset_sub">Follow ring automatically</string>
     <string name="info_pos_reset_done">App icon position reset</string>
+    <string name="t_charge_show_temp">Battery temperature (°C)</string>
+    <string name="t_cpu_color_by_load">Color CPU text by load</string>
+    <string name="cd_peek_close">Close message plate</string>
 </resources>
 

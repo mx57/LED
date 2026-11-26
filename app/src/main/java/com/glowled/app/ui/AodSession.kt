@@ -653,6 +653,7 @@ class AodSession(
         peek.onMarkRead = { e -> markRead(e) }
         peek.onMarkAllRead = { list -> markAllRead(list) }
         peek.onInteraction = { resetPeekTimeout() }
+        peek.onClose = { hidePeek() }
         peek.onExpandedChanged = {
             resetPeekTimeout()
             root.requestLayout()

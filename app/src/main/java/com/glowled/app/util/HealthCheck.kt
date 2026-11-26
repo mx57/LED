@@ -122,6 +122,18 @@ object HealthCheck {
             }
         ))
 
+        // 8. CPU Monitor source
+        if (LedController.prefs.cpuIndicator) {
+            val src = com.glowled.app.core.CpuStats.activeSource
+            val usage = com.glowled.app.core.CpuStats.cachedUsage
+            list.add(HealthItem(
+                title = "CPU Monitor",
+                isOk = src != "unavailable",
+                detail = if (src == "unavailable") "Blocked by system SELinux" else "Source: $src (${if (usage >= 0) "$usage%" else "sampling…"})",
+                fixAction = null,
+            ))
+        }
+
         return list
     }
 

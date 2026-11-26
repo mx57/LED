@@ -88,6 +88,8 @@ object OverlayHost {
             prefs.cpuOffsetXDp,
             prefs.cpuOffsetYDp,
             prefs.cpuFontSizeSp,
+            LedController.cpuUsage,
+            prefs.cpuColorByLoad,
         )
         v.dropletRadiusDp = prefs.dropletSizeDp.toFloat()
         val flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
@@ -233,6 +235,8 @@ object OverlayHost {
             prefs.cpuOffsetXDp,
             prefs.cpuOffsetYDp,
             prefs.cpuFontSizeSp,
+            LedController.cpuUsage,
+            prefs.cpuColorByLoad,
         )
         ScreenOnOverlay.updateCpuText()
     }

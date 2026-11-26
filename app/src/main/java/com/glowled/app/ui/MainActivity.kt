@@ -321,6 +321,8 @@ class MainActivity : AppCompatActivity() {
             val usage = if (LedController.cpuUsage >= 0) LedController.cpuUsage else com.glowled.app.core.CpuStats.cachedUsage
             val text = if (usage >= 0) {
                 if (prefs.cpuShowLabel) "CPU $usage%" else "$usage%"
+            } else if (com.glowled.app.core.CpuStats.activeSource == "unavailable") {
+                if (prefs.cpuShowLabel) "CPU N/A" else "N/A"
             } else {
                 if (prefs.cpuShowLabel) "CPU …" else "…"
             }
@@ -329,7 +331,9 @@ class MainActivity : AppCompatActivity() {
                 prefs.cpuPos,
                 prefs.cpuOffsetXDp,
                 prefs.cpuOffsetYDp,
-                prefs.cpuFontSizeSp
+                prefs.cpuFontSizeSp,
+                usage,
+                prefs.cpuColorByLoad,
             )
         } else {
             cameraLed.setCpuLoad(null)
@@ -677,6 +681,7 @@ class MainActivity : AppCompatActivity() {
             Toggle(getString(R.string.t_charge_show_voltage), "charge_show_voltage", true, chargeOn),
             Toggle(getString(R.string.t_charge_show_current), "charge_show_current", true, chargeOn),
             Toggle(getString(R.string.t_charge_show_power), "charge_show_power", true, chargeOn),
+            Toggle(getString(R.string.t_charge_show_temp), "charge_show_temp", false, chargeOn),
         ))
         col.addView(label(getString(R.string.charge_colours)))
         ui.colorTiles(col, listOf(
@@ -689,6 +694,7 @@ class MainActivity : AppCompatActivity() {
         ui.toggles(col, listOf(
             Toggle(getString(R.string.t_cpu_indicator), "cpu_indicator", false),
             Toggle(getString(R.string.t_cpu_show_label), "cpu_show_label", true, cpuOn),
+            Toggle(getString(R.string.t_cpu_color_by_load), "cpu_color_by_load", true, cpuOn),
         ))
         val cpuCard = ui.card(col)
         ui.chips(cpuCard, getString(R.string.chips_cpu_pos), "cpu_pos",

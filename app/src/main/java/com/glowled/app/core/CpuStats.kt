@@ -12,8 +12,8 @@ import java.util.concurrent.TimeUnit
 
 /**
  * Reads overall device CPU usage percentage (0..100%).
- * Uses /proc/stat if accessible, falling back to top -b -n 1 -m 1 or sysfs frequencies.
- * All sampling runs off the UI thread via [updateAsync].
+ * Uses /proc/stat if accessible, falling back to top -b -n 1 -m 1 or sysfs frequencies
+ * (both cpu* and cpufreq/policy*). All sampling runs off the UI thread via [updateAsync].
  */
 object CpuStats {
     private const val TAG = "CpuStats"
@@ -24,15 +24,19 @@ object CpuStats {
 
     private var lastTotal: Long = 0L
     private var lastIdle: Long = 0L
+
     @Volatile var cachedUsage: Int = -1
         private set
 
-    /** Submits a background sample and returns the percentage to [callback] on the main thread. */
+    @Volatile var activeSource: String = "pending"
+        private set
+
+    /** Submits a background sample and returns the percentage (or -1 if unavailable) to [callback] on main thread. */
     fun updateAsync(callback: (Int) -> Unit) {
         executor.execute {
             val usage = sample()
             if (usage >= 0) cachedUsage = usage
-            val result = if (usage >= 0) usage else (if (cachedUsage >= 0) cachedUsage else 0)
+            val result = if (usage >= 0) usage else cachedUsage
             mainHandler.post { callback(result) }
         }
     }
@@ -40,15 +44,31 @@ object CpuStats {
     /** Samples total CPU usage percentage synchronously (call off main thread). */
     fun sample(): Int {
         val fromProc = readProcStat()
-        if (fromProc in 0..100) return fromProc
+        if (fromProc in 0..100) {
+            activeSource = "proc_stat"
+            return fromProc
+        }
 
         val fromTop = readTop()
-        if (fromTop in 0..100) return fromTop
+        if (fromTop in 0..100) {
+            activeSource = "top"
+            return fromTop
+        }
+
+        val fromPolicy = readPolicyFreqRatio()
+        if (fromPolicy in 0..100) {
+            activeSource = "cpufreq_policy"
+            return fromPolicy
+        }
 
         val fromFreq = readFreqRatio()
-        if (fromFreq in 0..100) return fromFreq
+        if (fromFreq in 0..100) {
+            activeSource = "cpufreq_cpu"
+            return fromFreq
+        }
 
-        return if (cachedUsage >= 0) cachedUsage else -1
+        activeSource = "unavailable"
+        return -1
     }
 
     /** Reads /proc/stat if available to the process. */
@@ -159,25 +179,60 @@ object CpuStats {
         return -1
     }
 
-    /** Fallback: estimates load from current scaling frequency vs maximum frequency across cores. */
+    /** Computes normalized load ratio from (cur - min) / (max - min). */
+    internal fun freqRatio(cur: Float, min: Float, max: Float): Float {
+        if (max <= 0f) return -1f
+        val effectiveMin = if (min >= 0f && min < max) min else 0f
+        val span = max - effectiveMin
+        return if (span > 0f) ((cur - effectiveMin) / span).coerceIn(0f, 1f) else (cur / max).coerceIn(0f, 1f)
+    }
+
+    private fun readDirFreq(dir: File): Float {
+        val curFile = File(dir, "scaling_cur_freq")
+        if (!curFile.canRead()) return -1f
+        val maxFile = File(dir, "cpuinfo_max_freq").takeIf { it.canRead() }
+            ?: File(dir, "scaling_max_freq").takeIf { it.canRead() }
+            ?: return -1f
+        val minFile = File(dir, "cpuinfo_min_freq").takeIf { it.canRead() }
+            ?: File(dir, "scaling_min_freq").takeIf { it.canRead() }
+        val cur = curFile.readText().trim().toFloatOrNull() ?: return -1f
+        val max = maxFile.readText().trim().toFloatOrNull() ?: return -1f
+        val min = minFile?.readText()?.trim()?.toFloatOrNull() ?: 0f
+        return freqRatio(cur, min, max)
+    }
+
+    /** Reads /sys/devices/system/cpu/cpufreq/policy* directories (standard on modern GKI/Snapdragon/Dimensity). */
+    private fun readPolicyFreqRatio(): Int = try {
+        val policyRoot = File("/sys/devices/system/cpu/cpufreq")
+        val dirs = policyRoot.listFiles { f -> f.isDirectory && f.name.startsWith("policy") } ?: return -1
+        var count = 0
+        var sumRatio = 0f
+        for (dir in dirs) {
+            val r = readDirFreq(dir)
+            if (r >= 0f) {
+                sumRatio += r
+                count++
+            }
+        }
+        if (count > 0) (sumRatio / count * 100f).toInt().coerceIn(0, 100) else -1
+    } catch (_: Throwable) {
+        -1
+    }
+
+    /** Fallback: estimates load from current scaling frequency vs min/max across cpu0..cpu15. */
     private fun readFreqRatio(): Int = try {
         var count = 0
         var sumRatio = 0f
         for (i in 0 until 16) {
-            val curFile = File("/sys/devices/system/cpu/cpu$i/cpufreq/scaling_cur_freq")
-            val maxFile = File("/sys/devices/system/cpu/cpu$i/cpufreq/cpuinfo_max_freq")
-            if (!curFile.exists() || !maxFile.exists()) {
-                if (i > 0 && !File("/sys/devices/system/cpu/cpu$i").exists()) break
-                continue
-            }
-            val cur = curFile.readText().trim().toFloatOrNull() ?: continue
-            val max = maxFile.readText().trim().toFloatOrNull() ?: continue
-            if (max > 0f) {
-                sumRatio += (cur / max).coerceIn(0f, 1f)
+            val cpuDir = File("/sys/devices/system/cpu/cpu$i")
+            if (i > 0 && !cpuDir.exists()) break
+            val r = readDirFreq(File(cpuDir, "cpufreq"))
+            if (r >= 0f) {
+                sumRatio += r
                 count++
             }
         }
-        if (count > 0) ((sumRatio / count) * 100).toInt().coerceIn(0, 100) else -1
+        if (count > 0) (sumRatio / count * 100f).toInt().coerceIn(0, 100) else -1
     } catch (_: Throwable) {
         -1
     }

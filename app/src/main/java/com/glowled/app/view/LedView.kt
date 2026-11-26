@@ -165,10 +165,13 @@ class LedView @JvmOverloads constructor(
     private var cpuPos: String = "below"
     private var cpuOffsetXPx: Float = 0f
     private var cpuOffsetYPx: Float = 0f
+    private var cpuUsagePct: Int = -1
+    private var cpuColorByLoad: Boolean = true
     private val cpuPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.CENTER
         textSize = 12 * resources.displayMetrics.scaledDensity
         typeface = android.graphics.Typeface.DEFAULT_BOLD
+        setShadowLayer(3f * resources.displayMetrics.density, 0f, 1f * resources.displayMetrics.density, Color.BLACK)
     }
     private var meterColor = 0
     private var meterStart = 0L
@@ -205,15 +208,27 @@ class LedView @JvmOverloads constructor(
         setBatteryText(percent?.coerceIn(0, 100)?.let { "$it%" })
     }
 
-    fun setCpuLoad(text: String?, pos: String = "below", offsetXDp: Int = 0, offsetYDp: Int = 0, fontSizeSp: Int = 12) {
+    fun setCpuLoad(
+        text: String?,
+        pos: String = "below",
+        offsetXDp: Int = 0,
+        offsetYDp: Int = 0,
+        fontSizeSp: Int = 12,
+        usagePct: Int = -1,
+        colorByLoad: Boolean = true,
+    ) {
         val targetSize = fontSizeSp * resources.displayMetrics.scaledDensity
         val targetX = offsetXDp * density
         val targetY = offsetYDp * density
-        if (cpuLabel == text && cpuPos == pos && cpuOffsetXPx == targetX && cpuOffsetYPx == targetY && cpuPaint.textSize == targetSize) return
+        if (cpuLabel == text && cpuPos == pos && cpuOffsetXPx == targetX && cpuOffsetYPx == targetY &&
+            cpuPaint.textSize == targetSize && cpuUsagePct == usagePct && cpuColorByLoad == colorByLoad
+        ) return
         cpuLabel = text
         cpuPos = pos
         cpuOffsetXPx = targetX
         cpuOffsetYPx = targetY
+        cpuUsagePct = usagePct
+        cpuColorByLoad = colorByLoad
         cpuPaint.textSize = targetSize
         dirty = true
         invalidate()
@@ -250,14 +265,22 @@ class LedView @JvmOverloads constructor(
     private fun drawCpuLabel(c: Canvas) {
         val text = cpuLabel ?: return
         if (intro <= 0f || alphaMul <= 0f) return
-        cpuPaint.color = Color.WHITE
-        cpuPaint.alpha = (220 * alphaMul * intro).toInt().coerceIn(0, 255)
+        cpuPaint.color = if (cpuColorByLoad && cpuUsagePct >= 0) {
+            when {
+                cpuUsagePct < 40 -> 0xFF00E676.toInt()
+                cpuUsagePct <= 75 -> 0xFFFFC400.toInt()
+                else -> 0xFFFF5252.toInt()
+            }
+        } else {
+            Color.WHITE
+        }
+        cpuPaint.alpha = (235 * alphaMul * intro).toInt().coerceIn(0, 255)
         val r = ringRadius()
         val glow = glowRadius()
         val spacing = max(14 * density, cpuPaint.fontSpacing + 2 * density)
 
         val tx: Float
-        val ty: Float
+        var ty: Float
         when (cpuPos) {
             "right" -> {
                 cpuPaint.textAlign = Paint.Align.LEFT
@@ -284,6 +307,9 @@ class LedView @JvmOverloads constructor(
                 ty = base + spacing - cpuPaint.descent() + cpuOffsetYPx
             }
         }
+        val minTy = cpuPaint.textSize + 2 * density
+        val maxTy = if (height > 0) (height - 2 * density).coerceAtLeast(minTy) else Float.MAX_VALUE
+        ty = ty.coerceIn(minTy, maxTy)
         c.drawText(text, tx, ty, cpuPaint)
     }
 

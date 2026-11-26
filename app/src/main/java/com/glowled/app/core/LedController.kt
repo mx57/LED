@@ -676,6 +676,7 @@ object LedController {
                 showVoltage = prefs.chargeShowVoltage,
                 showCurrent = prefs.chargeShowCurrent,
                 showPower = prefs.chargeShowPower,
+                showTemp = prefs.chargeShowTemp,
             )
             if (statsText != null) return statsText
         }
@@ -754,7 +755,14 @@ object LedController {
         private set
 
     fun cpuStatusText(): String? {
-        if (!prefs.cpuIndicator || cpuUsage < 0) return null
+        if (!prefs.cpuIndicator) return null
+        if (cpuUsage < 0) {
+            return if (CpuStats.activeSource == "unavailable") {
+                if (prefs.cpuShowLabel) "CPU N/A" else "N/A"
+            } else {
+                if (prefs.cpuShowLabel) "CPU …" else "…"
+            }
+        }
         return if (prefs.cpuShowLabel) "CPU $cpuUsage%" else "$cpuUsage%"
     }
 
@@ -767,7 +775,7 @@ object LedController {
             CpuStats.updateAsync { usage ->
                 if (!cpuWatching) return@updateAsync
                 cpuUsage = usage
-                notifyListeners()
+                if (appInForeground || aodVisible) notifyListeners()
                 OverlayHost.updateCpuText()
                 main.postDelayed(this, CPU_TICK_MS)
             }

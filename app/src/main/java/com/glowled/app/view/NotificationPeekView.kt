@@ -38,6 +38,7 @@ class NotificationPeekView(context: Context) : LinearLayout(context) {
     var onMarkAllRead: ((List<NotificationStore.Entry>) -> Unit)? = null
     var onInteraction: (() -> Unit)? = null
     var onExpandedChanged: ((Boolean) -> Unit)? = null
+    var onClose: (() -> Unit)? = null
 
     /** Show the Reply / Mark as read buttons. */
     var actionsEnabled = true
@@ -160,12 +161,23 @@ class NotificationPeekView(context: Context) : LinearLayout(context) {
         }
 
         // Header
+        val closeBtn = ImageView(context).apply {
+            setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
+            imageTintList = ColorStateList.valueOf(grey(0.45f))
+            contentDescription = context.getString(R.string.cd_peek_close)
+            setPadding(dp(4f), dp(4f), dp(4f), dp(4f))
+            setOnClickListener {
+                onInteraction?.invoke()
+                onClose?.invoke()
+            }
+        }
         val head = LinearLayout(context).apply {
             orientation = HORIZONTAL
             gravity = Gravity.START or Gravity.CENTER_VERTICAL
             addView(appIcon, LayoutParams(dp(16f), dp(16f)).apply { marginEnd = dp(8f) })
             addView(appName, LayoutParams(0, -2, 1f))
             addView(headerChevron, LayoutParams(dp(20f), dp(20f)))
+            addView(closeBtn, LayoutParams(dp(24f), dp(24f)).apply { marginStart = dp(6f) })
             isClickable = true
             setOnClickListener {
                 if (expandableEnabled && entries.isNotEmpty()) {

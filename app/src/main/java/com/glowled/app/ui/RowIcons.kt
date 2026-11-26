@@ -59,6 +59,7 @@ object RowIcons {
         "charge_show_voltage" to (R.drawable.ic_s_bolt to ORANGE),
         "charge_show_current" to (R.drawable.ic_s_gauge to CYAN),
         "charge_show_power" to (R.drawable.ic_s_sun to RED),
+        "charge_show_temp" to (R.drawable.ic_s_sun to ORANGE),
         "battery_indicator" to (R.drawable.ic_s_battery to GREY),
         "progress_led" to (R.drawable.ic_s_download to BLUE),
         "progress_initials" to (R.drawable.ic_s_updown to BLUE),
@@ -66,6 +67,7 @@ object RowIcons {
         "progress_color" to (R.drawable.ic_s_palette to PURPLE),
         "cpu_indicator" to (R.drawable.ic_s_gauge to ORANGE),
         "cpu_show_label" to (R.drawable.ic_s_badge to BLUE),
+        "cpu_color_by_load" to (R.drawable.ic_s_palette to GREEN),
         "cpu_pos" to (R.drawable.ic_s_ring to CYAN),
         "cpu_font_size" to (R.drawable.ic_s_theme to TEAL),
         // Alerts

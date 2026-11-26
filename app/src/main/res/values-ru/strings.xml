@@ -407,5 +407,8 @@
     <string name="info_pos_reset">Вернуть значок к кольцу</string>
     <string name="info_pos_reset_sub">Автоматически рядом с кольцом</string>
     <string name="info_pos_reset_done">Положение значка сброшено</string>
+    <string name="t_charge_show_temp">Температура батареи (°C)</string>
+    <string name="t_cpu_color_by_load">Цвет текста CPU по нагрузке</string>
+    <string name="cd_peek_close">Закрыть плашку сообщений</string>
 </resources>
 

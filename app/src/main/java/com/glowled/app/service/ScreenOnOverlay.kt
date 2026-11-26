@@ -208,6 +208,7 @@ object ScreenOnOverlay {
             onMarkRead = { e -> markRead(e) }
             onMarkAllRead = { list -> markAllRead(list) }
             onInteraction = { resetPeekTimeout() }
+            onClose = { hidePeek(showIconsAfter = true) }
             onExpandedChanged = {
                 resetPeekTimeout()
                 val type = windowType()
@@ -372,6 +373,8 @@ object ScreenOnOverlay {
             prefs.cpuOffsetXDp,
             prefs.cpuOffsetYDp,
             prefs.cpuFontSizeSp,
+            LedController.cpuUsage,
+            prefs.cpuColorByLoad,
         )
 
         val flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
@@ -461,6 +464,8 @@ object ScreenOnOverlay {
             prefs.cpuOffsetXDp,
             prefs.cpuOffsetYDp,
             prefs.cpuFontSizeSp,
+            LedController.cpuUsage,
+            prefs.cpuColorByLoad,
         )
         ledView.dropletRadiusDp = prefs.dropletSizeDp.toFloat()
         info?.monochrome = prefs.aodIcons
@@ -795,6 +800,8 @@ object ScreenOnOverlay {
             prefs.cpuOffsetXDp,
             prefs.cpuOffsetYDp,
             prefs.cpuFontSizeSp,
+            LedController.cpuUsage,
+            prefs.cpuColorByLoad,
         )
     }
 }
