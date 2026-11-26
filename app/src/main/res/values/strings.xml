@@ -400,5 +400,13 @@
     <string name="chips_peek_pos">Message plate side</string>
     <string name="s_peek_offset">Plate offset from ring</string>
     <string name="cd_app_priority">Priority app</string>
+    <string name="t_screen_on_droplet">Droplet on screen-on</string>
+    <string name="t_screen_on_auto_icons">Auto-show app icon on screen-on</string>
+    <string name="t_drag_info">Move app icon with long press</string>
+    <string name="s_info_pos_x">App icon X position</string>
+    <string name="s_info_pos_y">App icon Y position</string>
+    <string name="info_pos_reset">Reset app icon to ring</string>
+    <string name="info_pos_reset_sub">Follow ring automatically</string>
+    <string name="info_pos_reset_done">App icon position reset</string>
 </resources>
 

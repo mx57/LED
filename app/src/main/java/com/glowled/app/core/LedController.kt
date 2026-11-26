@@ -167,19 +167,23 @@ object LedController {
             startAod(pulse = false)
         }
         updateOverlay()
-        if (newPost && prefs.droplet && isInteractive() && !aodVisible) {
+        if (newPost && (prefs.screenOnDroplet || prefs.screenOnAutoIcons) && isInteractive() && !aodVisible) {
             val app = NotificationStore.apps().firstOrNull()
             if (app != null) {
-                DebugLog.add("Droplet triggered for ${app.pkg}")
-                OverlayHost.droplet(app.color)
-                // If overlay wasn't ready (e.g. app in foreground), retry shortly when it appears.
-                pendingDropletColor = app.color
-                pendingDropletUntil = SystemClock.uptimeMillis() + 6000
+                if (OverlayHost.isShowing()) {
+                    DebugLog.add("Screen-on notify triggered for ${app.pkg}")
+                    OverlayHost.onNewNotification(app.color)
+                    pendingDropletColor = null
+                } else {
+                    // Overlay wasn't ready (e.g. app in foreground), retry shortly when it appears.
+                    pendingDropletColor = app.color
+                    pendingDropletUntil = SystemClock.uptimeMillis() + 6000
+                }
             } else {
                 DebugLog.add("Droplet skipped: no app")
             }
         } else if (newPost) {
-            DebugLog.add("Droplet skipped: droplet=${prefs.droplet} interactive=${isInteractive()} aod=$aodVisible")
+            DebugLog.add("Droplet skipped: onDroplet=${prefs.screenOnDroplet} autoIcons=${prefs.screenOnAutoIcons} interactive=${isInteractive()} aod=$aodVisible")
         }
     }
 
@@ -605,7 +609,7 @@ object LedController {
             val pending = pendingDropletColor
             if (pending != null && SystemClock.uptimeMillis() <= pendingDropletUntil) {
                 pendingDropletColor = null
-                main.postDelayed({ OverlayHost.droplet(pending) }, 150)
+                main.postDelayed({ OverlayHost.onNewNotification(pending) }, 150)
             } else if (pending != null) {
                 pendingDropletColor = null
             }

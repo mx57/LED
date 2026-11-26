@@ -93,4 +93,16 @@ class OverlayLayoutTest {
         )
         assertWithinScreen(res)
     }
+
+    @Test
+    fun customInfoPositionPlacesInfoAndClampsToScreen() {
+        val input = baseInput(cx = 540f, cy = 100f, pos = PeekPosition.BELOW).copy(
+            customInfoCx = 1060f,
+            customInfoCy = 2380f,
+        )
+        val res = OverlayLayout.compute(input)
+        assertWithinScreen(res)
+        assertEquals(1080 - 24 - 240, res.infoRect.left)
+        assertEquals(2400 - 24 - 100, res.infoRect.top)
+    }
 }

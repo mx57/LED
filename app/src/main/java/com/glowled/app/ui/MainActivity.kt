@@ -126,7 +126,7 @@ class MainActivity : AppCompatActivity() {
         // A new method choice gets a fresh chance to use the flicker-free lock-screen window.
         if (key == "aod_method") prefs.deviceSp.edit().remove(LedController.PREF_WINDOW_BLOCKED).apply()
         configureCameraLed()
-        if (key == "droplet" && prefs.droplet) {
+        if ((key == "droplet" && prefs.droplet) || (key == "screen_on_droplet" && prefs.screenOnDroplet)) {
             // Show what the setting does: on the real camera, and in the one-handed preview.
             cameraLed.playDropletBelow(prefs.defaultColor, DROP_PREVIEW_DP * density, retract = true)
         }
@@ -139,6 +139,13 @@ class MainActivity : AppCompatActivity() {
         if (key == "snooze_choice") {
             val mins = prefs.sp.getString("snooze_choice", "0")?.toIntOrNull() ?: 0
             if (mins > 0) prefs.snooze(mins) else prefs.clearSnooze()
+        }
+        if (key == "info_pos_x_pct" || key == "info_pos_y_pct") {
+            val size = CutoutGeometry.naturalSize(this)
+            val px = prefs.sp.getInt("info_pos_x_pct", 50)
+            val py = prefs.sp.getInt("info_pos_y_pct", 20)
+            prefs.saveInfoPos(px / 100f * size.x, py / 100f * size.y, size.x)
+            LedController.refreshAll()
         }
     }
 
@@ -585,7 +592,9 @@ class MainActivity : AppCompatActivity() {
             Toggle(getString(R.string.t_lock_only), "overlay_lock_only", false, ringOn),
             Toggle(getString(R.string.t_overlay_tap_messages), "overlay_tap_messages", true) { prefs.overlayEnabled && !prefs.overlayLockOnly },
             Toggle(getString(R.string.t_drag_ring), "drag_ring_enabled", true, ringOn),
-            Toggle(getString(R.string.t_droplet), "droplet", true, ringOn),
+            Toggle(getString(R.string.t_screen_on_droplet), "screen_on_droplet", true, ringOn),
+            Toggle(getString(R.string.t_screen_on_auto_icons), "screen_on_auto_icons", false, tapOn),
+            Toggle(getString(R.string.t_drag_info), "drag_info_enabled", true, tapOn),
         ))
         val ringCard = ui.card(col)
         ui.sliders(ringCard,
@@ -624,6 +633,17 @@ class MainActivity : AppCompatActivity() {
         val peekCardOn = ui.card(col)
         ui.chips(peekCardOn, getString(R.string.chips_peek_pos), "peek_position",
             labels(R.array.peek_pos_labels), listOf("below", "above", "left", "right", "auto"), "below") { tapOn() && prefs.showContent }
+        ui.sliders(peekCardOn,
+            Range(getString(R.string.s_info_pos_x), "info_pos_x_pct", 5, 95, 50, "%"),
+            Range(getString(R.string.s_info_pos_y), "info_pos_y_pct", 5, 95, 20, "%"),
+            dependsOn = tapOn)
+        ui.divider(peekCardOn)
+        ui.link(peekCardOn, R.drawable.ic_s_rotate, getString(R.string.info_pos_reset), getString(R.string.info_pos_reset_sub), RowIcons.GREY) {
+            prefs.resetInfoPos()
+            LedController.refreshAll()
+            Toast.makeText(this, R.string.info_pos_reset_done, Toast.LENGTH_SHORT).show()
+        }
+        ui.divider(peekCardOn)
         ui.sliders(peekCardOn,
             Range(getString(R.string.s_peek_offset), "peek_offset_dp", 4, 60, 14, "dp"),
             Range(getString(R.string.s_peek_width), "peek_width", 180, 480, 340, "dp"),

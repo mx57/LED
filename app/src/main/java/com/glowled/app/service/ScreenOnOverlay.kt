@@ -46,6 +46,7 @@ import kotlin.math.roundToInt
 object ScreenOnOverlay {
 
     private enum class State { COLLAPSED, ICONS, PEEK }
+    private enum class DragTarget { NONE, RING, INFO }
 
     private var state = State.COLLAPSED
     private var root: RootLayout? = null
@@ -58,18 +59,21 @@ object ScreenOnOverlay {
 
     private val main = Handler(Looper.getMainLooper())
     private val hidePeekRunnable = Runnable { hidePeek(showIconsAfter = true) }
+    private val autoCollapseIconsRunnable = Runnable { if (state == State.ICONS) collapseToRing() }
 
     private var peekPkg: String? = null
     private var newestTime = 0L
 
-    private var isDragging = false
+    private var dragTarget = DragTarget.NONE
+    private var pendingDragTarget = DragTarget.NONE
+    private val isDragging get() = dragTarget != DragTarget.NONE
     private var dragCx = 0f
     private var dragCy = 0f
     private var dragStartX = 0f
     private var dragStartY = 0f
     private var dragOrigCx = 0f
     private var dragOrigCy = 0f
-    private val startDragRunnable = Runnable { beginDrag() }
+    private val startDragRunnable = Runnable { beginDrag(pendingDragTarget) }
 
     private val listener: () -> Unit = { main.post { onStoreChanged() } }
 
@@ -84,10 +88,11 @@ object ScreenOnOverlay {
 
     fun isShowing(): Boolean = root != null
 
-    /** True when the screen-on overlay should be the interactive (tappable) one. */
+    /** True when the screen-on overlay should be the interactive (tappable / draggable) one. */
     fun shouldBeInteractive(): Boolean {
         val p = LedController.prefs
-        return p.overlayEnabled && p.onTapMessages && !NotificationStore.isEmpty() &&
+        val canTap = p.onTapMessages && !NotificationStore.isEmpty()
+        return p.overlayEnabled && (canTap || p.dragRingEnabled) &&
             !LedController.isLocked() && !p.overlayLockOnly && !p.style.isEdge
     }
 
@@ -123,7 +128,15 @@ object ScreenOnOverlay {
                         downX = ev.rawX; downY = ev.rawY; downT = ev.eventTime
                         val loc = IntArray(2); getLocationOnScreen(loc)
                         DebugLog.add("Screen-on touch down ($state) at ${ev.rawX.toInt()},${ev.rawY.toInt()} win=${loc[0]},${loc[1]} ${width}x${height}")
-                        if (state == State.COLLAPSED && LedController.prefs.dragRingEnabled && !LedController.prefs.style.isEdge) {
+                        val p = LedController.prefs
+                        val infoV = info
+                        pendingDragTarget = when {
+                            state != State.COLLAPSED && infoV != null && infoV.visibility == View.VISIBLE &&
+                                pointInView(infoV, ev.rawX, ev.rawY) && p.dragInfoEnabled -> DragTarget.INFO
+                            state == State.COLLAPSED && p.dragRingEnabled && !p.style.isEdge -> DragTarget.RING
+                            else -> DragTarget.NONE
+                        }
+                        if (pendingDragTarget != DragTarget.NONE) {
                             dragStartX = ev.rawX; dragStartY = ev.rawY
                             main.removeCallbacks(startDragRunnable)
                             main.postDelayed(startDragRunnable, longPressTimeout)
@@ -252,42 +265,71 @@ object ScreenOnOverlay {
         return android.graphics.Rect(x, y, x + w, y + h)
     }
 
-    private fun beginDrag() {
-        if (state != State.COLLAPSED || root == null) return
+    private fun beginDrag(target: DragTarget) {
+        if (target == DragTarget.NONE || root == null) return
         val ctx = windowCtx ?: return
-        val g = geometry(ctx)
-        isDragging = true
-        dragOrigCx = g.cx
-        dragOrigCy = g.cy
-        dragCx = g.cx
-        dragCy = g.cy
+        if (target == DragTarget.RING && state != State.COLLAPSED) return
+        if (target == DragTarget.INFO && state == State.COLLAPSED) return
+        dragTarget = target
+        main.removeCallbacks(autoCollapseIconsRunnable)
+        if (target == DragTarget.RING) {
+            val g = geometry(ctx)
+            dragOrigCx = g.cx
+            dragOrigCy = g.cy
+        } else {
+            val infoView = info ?: run { dragTarget = DragTarget.NONE; return }
+            val loc = IntArray(2)
+            infoView.getLocationOnScreen(loc)
+            dragOrigCx = loc[0] + infoView.width / 2f
+            dragOrigCy = loc[1] + infoView.height / 2f
+        }
+        dragCx = dragOrigCx
+        dragCy = dragOrigCy
         root?.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
         val type = windowType()
         if (type != 0) applyWindow(type)
-        DebugLog.add("Screen-on ring drag started at ${dragCx.toInt()},${dragCy.toInt()}")
+        DebugLog.add("Screen-on $dragTarget drag started at ${dragCx.toInt()},${dragCy.toInt()}")
     }
 
     private fun updateDrag(rawX: Float, rawY: Float) {
         val ctx = windowCtx ?: return
-        val ledView = led ?: return
         val prefs = LedController.prefs
-        val g = geometry(ctx)
         val dm = ctx.resources.displayMetrics
-        val margin = (g.w / 2f + prefs.gapDp * dm.density + prefs.thicknessDp * dm.density).coerceAtLeast(16 * dm.density)
-        dragCx = (dragOrigCx + (rawX - dragStartX)).coerceIn(margin, (dm.widthPixels - margin).coerceAtLeast(margin))
-        dragCy = (dragOrigCy + (rawY - dragStartY)).coerceIn(margin, (dm.heightPixels - margin).coerceAtLeast(margin))
-        ledView.configure(prefs, g.copy(cx = dragCx, cy = dragCy), NotificationStore.colors())
+        if (dragTarget == DragTarget.RING) {
+            val ledView = led ?: return
+            val g = geometry(ctx)
+            val margin = (g.w / 2f + prefs.gapDp * dm.density + prefs.thicknessDp * dm.density).coerceAtLeast(16 * dm.density)
+            dragCx = (dragOrigCx + (rawX - dragStartX)).coerceIn(margin, (dm.widthPixels - margin).coerceAtLeast(margin))
+            dragCy = (dragOrigCy + (rawY - dragStartY)).coerceIn(margin, (dm.heightPixels - margin).coerceAtLeast(margin))
+            ledView.configure(prefs, g.copy(cx = dragCx, cy = dragCy), NotificationStore.colors())
+        } else if (dragTarget == DragTarget.INFO) {
+            val infoView = info ?: return
+            val halfW = (infoView.width / 2f).coerceAtLeast(16 * dm.density)
+            val halfH = (infoView.height / 2f).coerceAtLeast(16 * dm.density)
+            dragCx = (dragOrigCx + (rawX - dragStartX)).coerceIn(halfW, (dm.widthPixels - halfW).coerceAtLeast(halfW))
+            dragCy = (dragOrigCy + (rawY - dragStartY)).coerceIn(halfH, (dm.heightPixels - halfH).coerceAtLeast(halfH))
+            val rLoc = IntArray(2)
+            root?.getLocationOnScreen(rLoc)
+            place(infoView, dragCx - rLoc[0] - infoView.width / 2f, dragCy - rLoc[1] - infoView.height / 2f)
+        }
     }
 
     private fun finishDrag(save: Boolean) {
-        isDragging = false
+        val finishedTarget = dragTarget
+        dragTarget = DragTarget.NONE
+        pendingDragTarget = DragTarget.NONE
         if (save) {
             val ctx = windowCtx ?: return
-            val g = geometry(ctx)
             val screenW = CutoutGeometry.naturalSize(ctx).x
-            LedController.prefs.saveCutout(g.shape, dragCx, dragCy, g.w, g.h, screenW)
+            if (finishedTarget == DragTarget.RING) {
+                val g = geometry(ctx)
+                LedController.prefs.saveCutout(g.shape, dragCx, dragCy, g.w, g.h, screenW)
+                DebugLog.add("Screen-on ring moved to ${dragCx.toInt()},${dragCy.toInt()}")
+            } else if (finishedTarget == DragTarget.INFO) {
+                LedController.prefs.saveInfoPos(dragCx, dragCy, screenW)
+                DebugLog.add("Screen-on info strip moved to ${dragCx.toInt()},${dragCy.toInt()}")
+            }
             root?.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
-            DebugLog.add("Screen-on ring moved to ${dragCx.toInt()},${dragCy.toInt()}")
             LedController.refreshAll()
         } else {
             refresh()
@@ -457,6 +499,7 @@ object ScreenOnOverlay {
         } else {
             g.cy + ringExtent
         }
+        val customInfo = CutoutGeometry.resolveInfoPos(ctx, prefs)
         return OverlayLayout.compute(
             OverlayLayout.Input(
                 screenW = dm.widthPixels,
@@ -475,11 +518,14 @@ object ScreenOnOverlay {
                 showPeek = state == State.PEEK && (peekView?.isShowing() == true),
                 position = prefs.peekPosition,
                 offsetPx = (prefs.peekOffsetDp * d).toInt(),
+                customInfoCx = customInfo?.first,
+                customInfoCy = customInfo?.second,
             )
         )
     }
 
     private fun positionChildren() {
+        if (isDragging) return
         val r = root ?: return
         val ctx = windowCtx ?: return
         val ledView = led ?: return
@@ -516,18 +562,15 @@ object ScreenOnOverlay {
         setState(State.ICONS)
         main.removeCallbacks(hidePeekRunnable)
         val newest = NotificationStore.apps().firstOrNull()
-        if (withDroplet && prefs.droplet && newest != null) {
+        if (withDroplet && prefs.screenOnDroplet && newest != null) {
             info?.visibility = View.VISIBLE
             info?.alpha = 1f
             info?.doOnLayout {
                 if (root == null) return@doOnLayout
                 info?.prepareDrop()
                 val ctx = windowCtx ?: return@doOnLayout
-                val loc = IntArray(2); root!!.getLocationOnScreen(loc)
-                val g = geometry(ctx)
                 val infoView = info ?: return@doOnLayout
-                val infoX = g.cx - loc[0] - infoView.measuredWidth / 2f
-                val tx = infoX + infoView.newestCenterX()
+                val tx = infoView.left.toFloat() + infoView.newestCenterX()
                 val ty = infoView.top.toFloat() + infoView.iconCenterY()
                 led?.playDroplet(newest.color, ty, targetX = tx) { info?.popNewest() }
             }
@@ -537,6 +580,7 @@ object ScreenOnOverlay {
     }
 
     private fun collapseToRing() {
+        main.removeCallbacks(autoCollapseIconsRunnable)
         main.removeCallbacks(hidePeekRunnable)
         hidePeek(showIconsAfter = false)
         info?.clearSelection()
@@ -546,6 +590,7 @@ object ScreenOnOverlay {
 
     private fun onAppTapped(pkg: String) {
         val prefs = LedController.prefs
+        main.removeCallbacks(autoCollapseIconsRunnable)
         main.removeCallbacks(hidePeekRunnable)
         if (!prefs.showContent) {
             info?.clearSelection()
@@ -585,8 +630,8 @@ object ScreenOnOverlay {
             State.PEEK -> hidePeek(showIconsAfter = true)
             State.ICONS -> collapseToRing()
             State.COLLAPSED -> {
-                if (!NotificationStore.isEmpty()) expandToIcons(withDroplet = true)
-                else DebugLog.add("Screen-on tap: no notifications")
+                if (LedController.prefs.onTapMessages && !NotificationStore.isEmpty()) expandToIcons(withDroplet = LedController.prefs.screenOnDroplet)
+                else DebugLog.add("Screen-on tap: ignored")
             }
         }
     }
@@ -665,16 +710,12 @@ object ScreenOnOverlay {
         if (newest > newestTime) {
             val newestApp = apps.firstOrNull()
             newestTime = newest
-            if (state != State.COLLAPSED && newestApp != null && LedController.prefs.droplet) {
+            if (state != State.COLLAPSED && newestApp != null && LedController.prefs.screenOnDroplet) {
                 info?.doOnLayout {
                     if (root == null) return@doOnLayout
                     info?.prepareDrop()
-                    val ctx = windowCtx ?: return@doOnLayout
-                    val loc = IntArray(2); root!!.getLocationOnScreen(loc)
-                    val g = geometry(ctx)
                     val infoView = info ?: return@doOnLayout
-                    val infoX = g.cx - loc[0] - infoView.measuredWidth / 2f
-                    val tx = infoX + infoView.newestCenterX()
+                    val tx = infoView.left.toFloat() + infoView.newestCenterX()
                     val ty = infoView.top.toFloat() + infoView.iconCenterY()
                     led?.playDroplet(newestApp.color, ty, targetX = tx) { info?.popNewest() }
                 }
@@ -691,8 +732,26 @@ object ScreenOnOverlay {
         root?.post { positionChildren() }
     }
 
+    /** Auto-shows icon strip or plays retracting droplet on a new screen-on notification. */
+    fun onNewNotification(color: Int) {
+        val prefs = LedController.prefs
+        if (prefs.screenOnAutoIcons && prefs.onTapMessages && !NotificationStore.isEmpty()) {
+            if (state == State.COLLAPSED) {
+                expandToIcons(withDroplet = prefs.screenOnDroplet)
+                main.removeCallbacks(autoCollapseIconsRunnable)
+                main.postDelayed(autoCollapseIconsRunnable, AUTO_ICONS_MS)
+            } else if (state == State.ICONS) {
+                main.removeCallbacks(autoCollapseIconsRunnable)
+                main.postDelayed(autoCollapseIconsRunnable, AUTO_ICONS_MS)
+            }
+        } else if (prefs.screenOnDroplet) {
+            droplet(color)
+        }
+    }
+
     /** Droplet on the ring while collapsed. */
     fun droplet(color: Int) {
+        if (!LedController.prefs.screenOnDroplet) return
         val ledView = led ?: run {
             DebugLog.add("Droplet skipped: no overlay view")
             return
@@ -714,13 +773,15 @@ object ScreenOnOverlay {
     }
 
     private fun cleanupRefs() {
-        isDragging = false
+        dragTarget = DragTarget.NONE
+        pendingDragTarget = DragTarget.NONE
         root = null; led = null; info = null; peek = null; wm = null; windowCtx = null
         usingA11y = false; state = State.COLLAPSED; peekPkg = null
     }
 
     private const val DROP_DP = 26f
     private const val PEEK_MS = 12_000L
+    private const val AUTO_ICONS_MS = 8_000L
 
     fun updateBatteryText() {
         led?.setBatteryText(LedController.batteryStatusText())

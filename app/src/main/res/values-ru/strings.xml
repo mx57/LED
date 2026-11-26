@@ -399,5 +399,13 @@
     <string name="chips_peek_pos">Сторона плашки сообщений</string>
     <string name="s_peek_offset">Отступ плашки от кольца</string>
     <string name="cd_app_priority">Приоритетное приложение</string>
+    <string name="t_screen_on_droplet">Капля на включённом экране</string>
+    <string name="t_screen_on_auto_icons">Автопоявление значка на вкл. экране</string>
+    <string name="t_drag_info">Перетаскивать значок долгим тапом</string>
+    <string name="s_info_pos_x">Положение значка по X</string>
+    <string name="s_info_pos_y">Положение значка по Y</string>
+    <string name="info_pos_reset">Вернуть значок к кольцу</string>
+    <string name="info_pos_reset_sub">Автоматически рядом с кольцом</string>
+    <string name="info_pos_reset_done">Положение значка сброшено</string>
 </resources>
 

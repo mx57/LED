@@ -115,6 +115,14 @@ object CutoutGeometry {
         return Geometry(prefs.cutShape, prefs.cutCx * s, prefs.cutCy * s, prefs.cutW * s, prefs.cutH * s)
     }
 
+    /** Custom screen position for the app icon strip in current-resolution pixels, or null if auto. */
+    fun resolveInfoPos(context: Context, prefs: Prefs): Pair<Float, Float>? {
+        if (!prefs.infoCustomPos || prefs.infoCx < 0f || prefs.infoCy < 0f || prefs.infoRefWidth <= 0) return null
+        val natural = naturalSize(context)
+        val s = natural.x.toFloat() / max(1, prefs.infoRefWidth)
+        return (prefs.infoCx * s) to (prefs.infoCy * s)
+    }
+
     /** Screen corner radius in px for edge lighting (system value on Android 12+). */
     fun cornerRadius(context: Context, prefs: Prefs): Float {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {

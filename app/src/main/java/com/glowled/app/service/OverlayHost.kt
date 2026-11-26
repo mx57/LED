@@ -176,6 +176,19 @@ object OverlayHost {
         }
     }
 
+    fun isShowing(): Boolean = view != null || ScreenOnOverlay.isShowing()
+
+    /** New notification while the screen is on: auto-show icons or play retracting droplet. */
+    fun onNewNotification(color: Int) {
+        if (ScreenOnOverlay.isShowing()) {
+            ScreenOnOverlay.onNewNotification(color)
+            return
+        }
+        if (LedController.prefs.screenOnDroplet) {
+            droplet(color)
+        }
+    }
+
     /** New notification while the screen is on: a drop stretches out of the camera and springs back. */
     fun droplet(color: Int) {
         if (ScreenOnOverlay.isShowing()) {

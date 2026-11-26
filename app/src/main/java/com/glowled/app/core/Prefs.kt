@@ -112,6 +112,36 @@ class Prefs(context: Context) {
     val peekOffsetDp get() = int("peek_offset_dp", 14).coerceIn(4, 60)
     /** Allow moving the ring anywhere on screen via long-press + drag. */
     val dragRingEnabled get() = bool("drag_ring_enabled", true)
+    /** Show droplet animation on screen-on. */
+    val screenOnDroplet get() = bool("screen_on_droplet", true)
+    /** Auto-show the app icon strip when a notification arrives with screen on. */
+    val screenOnAutoIcons get() = bool("screen_on_auto_icons", false)
+    /** Allow moving the app icon strip anywhere on screen via long-press + drag. */
+    val dragInfoEnabled get() = bool("drag_info_enabled", true)
+
+    // Custom position for the app icon strip (in natural-portrait px at [infoRefWidth])
+    val infoCustomPos get() = bool("info_custom_pos", false)
+    val infoCx get() = sp.getFloat("info_cx", -1f)
+    val infoCy get() = sp.getFloat("info_cy", -1f)
+    val infoRefWidth get() = int("info_ref_w", 0)
+
+    fun saveInfoPos(cx: Float, cy: Float, refWidth: Int) {
+        sp.edit()
+            .putBoolean("info_custom_pos", true)
+            .putFloat("info_cx", cx)
+            .putFloat("info_cy", cy)
+            .putInt("info_ref_w", refWidth)
+            .apply()
+    }
+
+    fun resetInfoPos() {
+        sp.edit()
+            .putBoolean("info_custom_pos", false)
+            .remove("info_cx")
+            .remove("info_cy")
+            .remove("info_ref_w")
+            .apply()
+    }
     /** Always-on icons as monochrome glyphs (One UI AOD style) instead of full-colour app icons. */
     val aodIcons get() = bool("aod_icons", true)
 

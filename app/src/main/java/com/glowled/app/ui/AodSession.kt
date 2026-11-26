@@ -217,6 +217,7 @@ class AodSession(
         val g = geometry()
         val dm = context.resources.displayMetrics
         val marginPx = (12 * density).toInt()
+        val customInfo = CutoutGeometry.resolveInfoPos(context, prefs)
         val layout = com.glowled.app.core.OverlayLayout.compute(
             com.glowled.app.core.OverlayLayout.Input(
                 screenW = dm.widthPixels,
@@ -235,6 +236,8 @@ class AodSession(
                 showPeek = peek.isShowing(),
                 position = prefs.peekPosition,
                 offsetPx = (prefs.peekOffsetDp * density).toInt(),
+                customInfoCx = customInfo?.first?.let { it + led.shiftX },
+                customInfoCy = customInfo?.second?.let { it + led.shiftY },
             )
         )
         infoX = layout.infoRect.left.toFloat() - loc[0]

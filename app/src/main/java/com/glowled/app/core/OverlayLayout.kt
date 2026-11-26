@@ -43,6 +43,8 @@ object OverlayLayout {
         val showPeek: Boolean,
         val position: PeekPosition,
         val offsetPx: Int,
+        val customInfoCx: Float? = null,
+        val customInfoCy: Float? = null,
     )
 
     data class Result(
@@ -144,8 +146,10 @@ object OverlayLayout {
 
         val clampedInfoW = input.infoW.coerceIn(0, maxAvailW)
         val clampedInfoH = input.infoH.coerceIn(0, maxAvailH)
-        val ix = rawInfoX.roundToInt().coerceIn(marginX, (input.screenW - marginX - clampedInfoW).coerceAtLeast(marginX))
-        val iy = rawInfoY.roundToInt().coerceIn(topMargin, (input.screenH - bottomMargin - clampedInfoH).coerceAtLeast(topMargin))
+        val finalRawInfoX = if (input.customInfoCx != null) input.customInfoCx - clampedInfoW / 2f else rawInfoX
+        val finalRawInfoY = if (input.customInfoCy != null) input.customInfoCy - clampedInfoH / 2f else rawInfoY
+        val ix = finalRawInfoX.roundToInt().coerceIn(marginX, (input.screenW - marginX - clampedInfoW).coerceAtLeast(marginX))
+        val iy = finalRawInfoY.roundToInt().coerceIn(topMargin, (input.screenH - bottomMargin - clampedInfoH).coerceAtLeast(topMargin))
         val infoRect = RectI(ix, iy, ix + clampedInfoW, iy + clampedInfoH)
 
         val clampedPeekW = input.peekW.coerceIn(0, maxAvailW)
